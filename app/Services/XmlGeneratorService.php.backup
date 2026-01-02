@@ -1,0 +1,218 @@
+<?php
+
+namespace App\Services;
+
+use App\DTOs\RpsData;
+use DOMDocument;
+
+class XmlGeneratorService
+{
+    public function generateBatchXml(array $rpsList, string $loteId = '1'): string
+    {
+        $dom = new DOMDocument('1.0', 'UTF-8');
+        $dom->formatOutput = true;
+
+        // Salvador uses ABRASF v1.0 with specific namespace
+        $root = $dom->createElement('EnviarLoteRpsEnvio');
+        $root->setAttribute('xmlns', 'http://www.abrasf.org.br/ABRASF/arquivos/nfse.xsd');
+        $dom->appendChild($root);
+
+        $loteRps = $dom->createElement('LoteRps');
+        $loteRps->setAttribute('Id', 'lote' . $loteId);
+        $loteRps->setAttribute('versao', '1.00');
+        $root->appendChild($loteRps);
+
+        // Header Lote
+        $numeroLote = $dom->createElement('NumeroLote', $loteId);
+        $loteRps->appendChild($numeroLote);
+
+        $cpfCnpjPrestador = $dom->createElement('CpfCnpj');
+        $cnpj = $dom->createElement('Cnpj', '00000000000000'); // TODO: Get from Tenant/User
+        $cpfCnpjPrestador->appendChild($cnpj);
+        $loteRps->appendChild($cpfCnpjPrestador);
+
+        $inscricao = $dom->createElement('InscricaoMunicipal', '000000'); // TODO: Get from Tenant/User
+        $loteRps->appendChild($inscricao);
+
+        $qtdRps = $dom->createElement('QuantidadeRps', count($rpsList));
+        $loteRps->appendChild($qtdRps);
+
+        $listaRps = $dom->createElement('ListaRps');
+        $loteRps->appendChild($listaRps);
+
+        foreach ($rpsList as $rpsData) {
+            /** @var RpsData $rpsData */
+            $rps = $dom->createElement('Rps');
+            $listaRps->appendChild($rps);
+
+            $infDeclaracao = $dom->createElement('InfDeclaracaoPrestacaoServico');
+            $rps->appendChild($infDeclaracao);
+
+            // Rps Info
+            $rpsElement = $dom->createElement('Rps');
+            $infDeclaracao->appendChild($rpsElement);
+
+            $identificacaoRps = $dom->createElement('IdentificacaoRps');
+            $rpsElement->appendChild($identificacaoRps);
+
+            $identificacaoRps->appendChild($dom->createElement('Numero', $rpsData->numero));
+            $identificacaoRps->appendChild($dom->createElement('Serie', $rpsData->serie));
+            $identificacaoRps->appendChild($dom->createElement('Tipo', $rpsData->tipo));
+
+            $rpsElement->appendChild($dom->createElement('DataEmissao', $rpsData->dataEmissao));
+            $rpsElement->appendChild($dom->createElement('Status', '1')); // 1 - Normal
+
+            $infDeclaracao->appendChild($dom->createElement('Competencia', $rpsData->competencia));
+
+            // Servico
+            $servico = $dom->createElement('Servico');
+            $infDeclaracao->appendChild($servico);
+
+            $valores = $dom->createElement('Valores');
+            $servico->appendChild($valores);
+            $valores->appendChild($dom->createElement('ValorServicos', number_format($rpsData->servico->valorServico ?? 0, 2, '.', '')));
+            $valores->appendChild($dom->createElement('ValorDeducoes', number_format($rpsData->servico->valorDeducoes ?? 0, 2, '.', '')));
+            $valores->appendChild($dom->createElement('ValorPis', number_format($rpsData->servico->valorPis ?? 0, 2, '.', '')));
+            $valores->appendChild($dom->createElement('ValorCofins', number_format($rpsData->servico->valorCofins ?? 0, 2, '.', '')));
+            $valores->appendChild($dom->createElement('ValorInss', number_format($rpsData->servico->valorInss ?? 0, 2, '.', '')));
+            $valores->appendChild($dom->createElement('ValorIr', number_format($rpsData->servico->valorIr ?? 0, 2, '.', '')));
+            $valores->appendChild($dom->createElement('ValorCsll', number_format($rpsData->servico->valorCsll ?? 0, 2, '.', '')));
+            $valores->appendChild($dom->createElement('OutrasRetencoes', number_format($rpsData->servico->outrasRetencoes ?? 0, 2, '.', '')));
+            $valores->appendChild($dom->createElement('ValorIss', number_format($rpsData->servico->valorIss ?? 0, 2, '.', '')));
+            $valores->appendChild($dom->createElement('Aliquota', number_format($rpsData->servico->aliquota ?? 0, 4, '.', '')));
+            $valores->appendChild($dom->createElement('DescontoIncondicionado', number_format($rpsData->servico->descontoIncondicionado ?? 0, 2, '.', '')));
+            $valores->appendChild($dom->createElement('DescontoCondicionado', number_format($rpsData->servico->descontoCondicionado ?? 0, 2, '.', '')));
+
+            $servico->appendChild($dom->createElement('IssRetido', $rpsData->servico->issRetido ?? 2)); // 1-Sim, 2-Não
+            $servico->appendChild($dom->createElement('ItemListaServico', $rpsData->servico->itemListaServico));
+
+            if ($rpsData->servico->codigoCnae) {
+                $servico->appendChild($dom->createElement('CodigoCnae', $rpsData->servico->codigoCnae));
+            }
+
+            if ($rpsData->servico->codigoTributacaoMunicipio) {
+                $servico->appendChild($dom->createElement('CodigoTributacaoMunicipio', $rpsData->servico->codigoTributacaoMunicipio));
+            }
+
+            $servico->appendChild($dom->createElement('Discriminacao', $rpsData->servico->discriminacao));
+            $servico->appendChild($dom->createElement('CodigoMunicipio', $rpsData->servico->codigoMunicipio));
+
+            // Prestador (Service Provider)
+            $prestador = $dom->createElement('Prestador');
+            $infDeclaracao->appendChild($prestador);
+
+            $cpfCnpjPrest = $dom->createElement('CpfCnpj');
+            $prestador->appendChild($cpfCnpjPrest);
+            $cpfCnpjPrest->appendChild($dom->createElement('Cnpj', '00000000000000')); // TODO: Get from Tenant/User
+
+            $prestador->appendChild($dom->createElement('InscricaoMunicipal', '000000')); // TODO: Get from Tenant/User
+
+            // Tomador
+            $tomador = $dom->createElement('Tomador');
+            $infDeclaracao->appendChild($tomador);
+
+            $identificacaoTomador = $dom->createElement('IdentificacaoTomador');
+            $tomador->appendChild($identificacaoTomador);
+
+            $cpfCnpjTomador = $dom->createElement('CpfCnpj');
+            $identificacaoTomador->appendChild($cpfCnpjTomador);
+
+            if (strlen($rpsData->tomador->cpfCnpj) == 11) {
+                $cpfCnpjTomador->appendChild($dom->createElement('Cpf', $rpsData->tomador->cpfCnpj));
+            } else {
+                $cpfCnpjTomador->appendChild($dom->createElement('Cnpj', $rpsData->tomador->cpfCnpj));
+            }
+
+            if ($rpsData->tomador->inscricaoMunicipal) {
+                $identificacaoTomador->appendChild($dom->createElement('InscricaoMunicipal', $rpsData->tomador->inscricaoMunicipal));
+            }
+
+            $tomador->appendChild($dom->createElement('RazaoSocial', $rpsData->tomador->razaoSocial));
+
+            if ($rpsData->tomador->endereco) {
+                $endereco = $dom->createElement('Endereco');
+                $tomador->appendChild($endereco);
+                $endereco->appendChild($dom->createElement('Logradouro', $rpsData->tomador->endereco->logradouro));
+                $endereco->appendChild($dom->createElement('Numero', $rpsData->tomador->endereco->numero));
+
+                if ($rpsData->tomador->endereco->complemento) {
+                    $endereco->appendChild($dom->createElement('Complemento', $rpsData->tomador->endereco->complemento));
+                }
+
+                $endereco->appendChild($dom->createElement('Bairro', $rpsData->tomador->endereco->bairro));
+                $endereco->appendChild($dom->createElement('CodigoMunicipio', $rpsData->tomador->endereco->codigoMunicipio));
+                $endereco->appendChild($dom->createElement('Uf', $rpsData->tomador->endereco->uf));
+                $endereco->appendChild($dom->createElement('Cep', $rpsData->tomador->endereco->cep));
+            }
+        }
+
+        return $dom->saveXML();
+    }
+
+    /**
+     * Generate XML in Domínio Sistemas import format (NFS-e format, not RPS)
+     * ABRASF v2.04 CompNfse structure
+     */
+    public function generateDominioXml(array $rpsList): string
+    {
+        $dom = new DOMDocument('1.0', 'UTF-8');
+        $dom->formatOutput = true;
+
+        // Domínio expects CompNfse (Comprovante NFS-e) format
+        $root = $dom->createElement('CompNfse');
+        $root->setAttribute('xmlns', 'http://www.abrasf.org.br/nfse.xsd');
+        $dom->appendChild($root);
+
+        foreach ($rpsList as $index => $rpsData) {
+            /** @var RpsData $rpsData */
+            $nfse = $dom->createElement('Nfse');
+            $nfse->setAttribute('versao', '2.04'); // Required attribute
+            $root->appendChild($nfse);
+
+            $infNfse = $dom->createElement('InfNfse');
+            $infNfse->setAttribute('Id', 'nfse' . ($index + 1));
+            $nfse->appendChild($infNfse);
+
+            // Número da NFS-e
+            $numero = $dom->createElement('Numero', $rpsData->numero);
+            $infNfse->appendChild($numero);
+
+            // Código de Verificação
+            $codigoVerificacao = $dom->createElement('CodigoVerificacao', strtoupper(substr(md5($rpsData->numero), 0, 9)));
+            $tomador->appendChild($identificacaoTomador);
+
+            $cpfCnpjTomador = $dom->createElement('CpfCnpj');
+            $identificacaoTomador->appendChild($cpfCnpjTomador);
+
+            if (strlen($rpsData->tomador->cpfCnpj) == 11) {
+                $cpfCnpjTomador->appendChild($dom->createElement('Cpf', $rpsData->tomador->cpfCnpj));
+            } else {
+                $cpfCnpjTomador->appendChild($dom->createElement('Cnpj', $rpsData->tomador->cpfCnpj));
+            }
+
+            if ($rpsData->tomador->inscricaoMunicipal) {
+                $identificacaoTomador->appendChild($dom->createElement('InscricaoMunicipal', $rpsData->tomador->inscricaoMunicipal));
+            }
+
+            $tomador->appendChild($dom->createElement('RazaoSocial', $rpsData->tomador->razaoSocial));
+
+            if ($rpsData->tomador->endereco) {
+                $endereco = $dom->createElement('Endereco');
+                $tomador->appendChild($endereco);
+                $endereco->appendChild($dom->createElement('Endereco', $rpsData->tomador->endereco->logradouro));
+                $endereco->appendChild($dom->createElement('Numero', $rpsData->tomador->endereco->numero));
+
+                if ($rpsData->tomador->endereco->complemento) {
+                    $endereco->appendChild($dom->createElement('Complemento', $rpsData->tomador->endereco->complemento));
+                }
+
+                $endereco->appendChild($dom->createElement('Bairro', $rpsData->tomador->endereco->bairro));
+                $endereco->appendChild($dom->createElement('CodigoMunicipio', $rpsData->tomador->endereco->codigoMunicipio));
+                $endereco->appendChild($dom->createElement('Uf', $rpsData->tomador->endereco->uf));
+                $endereco->appendChild($dom->createElement('Cep', $rpsData->tomador->endereco->cep));
+            }
+        }
+
+        return $dom->saveXML();
+    }
+}
