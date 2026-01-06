@@ -2,10 +2,21 @@
 
 namespace App\Services;
 
+use App\Contracts\OutputGeneratorInterface;
 use App\DTOs\RpsData;
 
-class CsvGeneratorService
+class CsvGeneratorService implements OutputGeneratorInterface
 {
+    public function generateBatch(array $rpsList, string $loteId = '1', array $providerInfo = [], array $options = []): string
+    {
+        return $this->generateCsv($rpsList);
+    }
+
+    public function getExtension(): string
+    {
+        return 'csv';
+    }
+
     public function generateCsv(array $rpsList): string
     {
         // Define Headers (Using Portuguese for user readability/Dominio)

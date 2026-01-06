@@ -3,10 +3,25 @@
 namespace App\Services;
 
 use App\DTOs\RpsData;
+use App\Contracts\OutputGeneratorInterface;
 use Illuminate\Support\Facades\Storage;
 
-class DominioTxtGeneratorService
+class DominioTxtGeneratorService implements OutputGeneratorInterface
 {
+    public function generateBatch(array $rpsList, string $loteId = '1', array $providerInfo = [], array $options = []): string
+    {
+        $state = $options['state'] ?? 'BA';
+        $acumulador = $options['acumulador'] ?? '1';
+        $startingNumber = $options['starting_number'] ?? 1;
+
+        return $this->generate($rpsList, $providerInfo, $state, $loteId, $acumulador, $startingNumber);
+    }
+
+    public function getExtension(): string
+    {
+        return 'txt';
+    }
+
     /**
      * Generate a Semicolon-Delimited TXT file for Domínio Import (Saídas)
      * Layout based on Google Sheet (Solution 9263)

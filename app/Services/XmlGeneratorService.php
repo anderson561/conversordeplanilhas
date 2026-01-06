@@ -2,11 +2,22 @@
 
 namespace App\Services;
 
+use App\Contracts\OutputGeneratorInterface;
 use App\DTOs\RpsData;
 use DOMDocument;
 
-class XmlGeneratorService
+class XmlGeneratorService implements OutputGeneratorInterface
 {
+    public function generateBatch(array $rpsList, string $loteId = '1', array $providerInfo = [], array $options = []): string
+    {
+        return $this->generateBatchXml($rpsList, $loteId, $providerInfo);
+    }
+
+    public function getExtension(): string
+    {
+        return 'xml';
+    }
+
     public function generateBatchXml(array $rpsList, string $loteId = '1', array $providerInfo = []): string
     {
         $dom = new DOMDocument('1.0', 'ISO-8859-1'); // Adjusted encoding to match user sample usually

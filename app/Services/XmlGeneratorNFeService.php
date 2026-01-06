@@ -2,11 +2,24 @@
 
 namespace App\Services;
 
+use App\Contracts\OutputGeneratorInterface;
 use DOMDocument;
 use DOMElement;
 
-class XmlGeneratorNFeService
+class XmlGeneratorNFeService implements OutputGeneratorInterface
 {
+    public function generateBatch(array $rpsList, string $loteId = '1', array $providerInfo = [], array $options = []): string
+    {
+        $state = $options['state'] ?? 'BA';
+        $startingNumber = $options['starting_number'] ?? 1;
+        return $this->generateBatchXml($rpsList, $loteId, $providerInfo, $state, $startingNumber);
+    }
+
+    public function getExtension(): string
+    {
+        return 'xml';
+    }
+
     /**
      * Generate NF-e 4.0 XML for output invoices (Saídas)
      */
