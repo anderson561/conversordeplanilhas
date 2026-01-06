@@ -20,6 +20,7 @@ O sistema segue o padrão MVC do Laravel, enriquecido com a arquitetura de **Ser
 3.  **Generator Factory & Strategy (Pattern)**:
     - Implementa o **Strategy Pattern** através da `OutputGeneratorInterface`.
     - Cada formato (Salvador, NFe, Domínio TXT, CSV) é uma estratégia isolada.
+    - Estratégias atuais: `XmlGeneratorService` (Salvador), `XmlGeneratorNFeService` (Saídas/NFe), `CsvGeneratorService`, `DominioTxtGeneratorService`.
     - O `GeneratorFactory` centraliza a inteligência de qual gerador instanciar baseado no `xml_type` do upload.
 
 4.  **ConversionService**:
