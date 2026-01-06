@@ -17,14 +17,13 @@ O sistema segue o padrão MVC do Laravel, enriquecido com a arquitetura de **Ser
     - O "cérebro" do sistema. Analisa os cabeçalhos das planilhas e detecta automaticamente o significado de cada coluna.
     - **Palavras-chave**: Suporta múltiplos sinônimos para campos financeiros (ex: 'total', 'locatários', 'preço', etc).
 
-3.  **XmlGeneratorService**:
-    - Abstração central para geração de XMLs. 
-    - Sub-classes especializadas:
-        - `XmlGeneratorNFeService`: Focado no modelo NF-e (saídas).
-        - `XmlGeneratorSalvadorService`: Focado no padrão ABRASF v1 de Salvador.
+3.  **Generator Factory & Strategy (Pattern)**:
+    - Implementa o **Strategy Pattern** através da `OutputGeneratorInterface`.
+    - Cada formato (Salvador, NFe, Domínio TXT, CSV) é uma estratégia isolada.
+    - O `GeneratorFactory` centraliza a inteligência de qual gerador instanciar baseado no `xml_type` do upload.
 
 4.  **ConversionService**:
-    - Orquestra o fluxo: Lê o arquivo -> Mapeia Colunas -> Valida Dados -> Gera XML.
+    - Padronizado para utilizar a `GeneratorFactory`. O serviço está agora desacoplado dos geradores individuais, facilitando a adição de novos formatos.
 
 ## ⚙️ Fluxo de Processamento (Filas)
 

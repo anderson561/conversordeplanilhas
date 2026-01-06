@@ -8,7 +8,7 @@ Converta planilhas financeiras (Excel/PDF) em arquivos XML compatíveis com sist
 - **Suporte Multi-Formato**: Processamento nativo de arquivos `.xlsx`, `.xls`, `.csv` e `.pdf`.
 - **Fila de Processamento (Scalability)**: Arquivos grandes são processados em segundo plano via Redis.
 - **Notificações em Tempo Real**: Alertas por e-mail assim que seus arquivos estão prontos.
-- **Segurança Robusta**: Auditoria de segurança completa, sanitização de dados e isolamento de usuários (Multi-tenant).
+- **Arquitetura Escalável**: Utiliza os padrões **Strategy** e **Factory** para facilitar a adição de novos formatos de prefeituras ou sistemas contábeis.
 - **Backups Automáticos**: Rotina diária de backup do banco de dados e arquivos.
 
 ## 🛠️ Stack Tecnológica
