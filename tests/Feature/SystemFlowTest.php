@@ -62,14 +62,15 @@ class SystemFlowTest extends TestCase
 
         $file = UploadedFile::fake()->create('extrato.pdf', 100, 'application/pdf');
 
-        $response = $this->actingAs($user)->post('/uploads', [
-            'file' => $file,
-            'provider_cnpj' => '12.345.678/0001-90',
-            'provider_razao_social' => 'Empresa Teste Ltda',
-            'xml_type' => 'servico',
-            'provider_uf' => 'BA',
-            'provider_municipio' => 'Salvador'
-        ]);
+        $response = $this->actingAs($user)
+            ->post('/uploads', [
+                'file' => $file,
+                'provider_cnpj' => '12.345.678/0001-90',
+                'provider_razao_social' => 'Empresa Teste Ltda',
+                'xml_type' => 'servico',
+                'provider_uf' => 'BA',
+                'provider_municipio' => 'Salvador'
+            ]);
 
         $response->assertRedirect('/uploads');
 
