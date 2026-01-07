@@ -76,6 +76,7 @@ class XmlGeneratorService implements OutputGeneratorInterface
             $identificacaoRps->appendChild($dom->createElement('Numero', $rpsData->numero));
             $identificacaoRps->appendChild($dom->createElement('Serie', $rpsData->serie));
             $identificacaoRps->appendChild($dom->createElement('Tipo', $rpsData->tipo));
+            $identificacaoRps->appendChild($dom->createElement('mod', '44'));
 
             // 5. NaturezaOperacao
             $infNfse->appendChild($dom->createElement('NaturezaOperacao', '1')); // 1 - Tributação no município
