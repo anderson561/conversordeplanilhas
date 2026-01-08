@@ -229,10 +229,19 @@ class MappingService
             $valor = (float) $valorClean;
         }
 
-        // Clean Date - ensure it respects "data recebimento" and is November not December
+        // Clean Date
         $dataRaw = $getValue('Data');
         $dataNormalized = $this->normalizeDate($dataRaw);
-        $dataEmissao = $dataNormalized ?: date('Y-m-d');
+
+        // Remove fallback to today. Use a fixed old date to flag issues.
+        $dataEmissao = $dataNormalized ?: '2000-01-01';
+
+        if (!$dataNormalized && $dataRaw) {
+            \Log::warning("MappingService: Date normalization failed", [
+                'raw' => $dataRaw,
+                'fallback' => $dataEmissao
+            ]);
+        }
 
         $razaoSocial = $getValue('Razao Social');
 

@@ -115,16 +115,8 @@ let pollingInterval = null;
 
 const startPolling = () => {
     pollingInterval = setInterval(() => {
-        // Only poll if there are pending or processing uploads
-        const hasPending = props.uploads && props.uploads.some(u => 
-            u.status === 'pending' || 
-            (u.latest_conversion_job && (u.latest_conversion_job.status === 'pending' || u.latest_conversion_job.status === 'processing'))
-        );
-
-        if (hasPending) {
-            router.reload({ preserveScroll: true });
-        }
-    }, 5000); // Check every 5 seconds
+        router.reload({ preserveScroll: true });
+    }, 10000); // Check every 10 seconds unconditionally
 };
 
 const stopPolling = () => {

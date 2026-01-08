@@ -219,7 +219,7 @@ class XmlGeneratorNFeService implements OutputGeneratorInterface
 
         // Data/Hora de emissão
         $dateParts = $this->parseFlexibleDate($rps->dataEmissao);
-        $dhEmi = $dateParts['iso_tz'] ?? date('Y-m-d') . 'T12:00:00-03:00';
+        $dhEmi = $dateParts['iso_tz'] ?? '2000-01-01T12:00:00-03:00';
         $ide->appendChild($dom->createElement('dhEmi', $dhEmi));
 
         $ide->appendChild($dom->createElement('tpNF', '1')); // 1=Saída
