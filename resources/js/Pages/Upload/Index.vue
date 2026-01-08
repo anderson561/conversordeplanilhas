@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 defineProps({
     uploads: Array,
@@ -109,6 +109,40 @@ const deleteUpload = (id) => {
         });
     }
 };
+
+// Polling logic for real-time status updates
+let pollingInterval = null;
+
+const startPolling = () => {
+    pollingInterval = setInterval(() => {
+        // Only poll if there are pending or processing uploads
+        const hasPending = props.uploads && props.uploads.some(u => 
+            u.status === 'pending' || 
+            (u.latest_conversion_job && (u.latest_conversion_job.status === 'pending' || u.latest_conversion_job.status === 'processing'))
+        );
+
+        if (hasPending) {
+            router.reload({ preserveScroll: true });
+        } else {
+            stopPolling();
+        }
+    }, 5000); // Check every 5 seconds
+};
+
+const stopPolling = () => {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+    }
+};
+
+onMounted(() => {
+    startPolling();
+});
+
+onUnmounted(() => {
+    stopPolling();
+});
 </script>
 
 <template>
