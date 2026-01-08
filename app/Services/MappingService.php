@@ -332,18 +332,28 @@ class MappingService
         if (empty($dateStr))
             return null;
 
+        // Clean common noise
+        $dateStr = str_replace('.', '/', $dateStr);
+
         // Try Y-m-d (Excel default ISO)
         if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $dateStr, $matches)) {
             return "{$matches[1]}-{$matches[2]}-{$matches[3]}";
         }
 
-        // Try d/m/Y (Brazilian standard)
-        if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})/', $dateStr, $matches)) {
-            return "{$matches[3]}-{$matches[2]}-{$matches[1]}";
+        // Try d/m/Y or d/m/y 
+        if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4}|\d{2})/', $dateStr, $matches)) {
+            $day = $matches[1];
+            $month = $matches[2];
+            $year = $matches[3];
+
+            if (strlen($year) === 2) {
+                $year = '20' . $year;
+            }
+            return "{$year}-{$month}-{$day}";
         }
 
         // Fallback to strtotime
-        $ts = strtotime($dateStr);
+        $ts = strtotime(str_replace('/', '-', $dateStr));
         return $ts ? date('Y-m-d', $ts) : null;
     }
 }

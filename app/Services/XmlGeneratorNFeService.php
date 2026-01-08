@@ -111,8 +111,8 @@ class XmlGeneratorNFeService implements OutputGeneratorInterface
         $ufCode = $this->getUFCode($state);
 
         // 2. AAMM (4 digits)
-        $dateParts = $this->parseFlexibleDate($rps->dataEmissao);
-        $aamm = $dateParts['ym'] ?? date('ym');
+        $dateInfo = $this->parseFlexibleDate($rps->dataEmissao);
+        $aamm = $dateInfo['ym'] ?? date('ym');
 
         // 3. CNPJ (14 digits)
         $cnpj = preg_replace('/\D/', '', $providerInfo['cnpj'] ?? '12314872000103');
