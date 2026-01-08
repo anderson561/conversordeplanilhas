@@ -66,8 +66,8 @@ class XmlGeneratorService implements OutputGeneratorInterface
 
             // 3. DataEmissao
             // Format Date as Y-m-d\TH:i:sP (with timezone, matching Salvador User Sample)
-            $dtEmissaoObj = \DateTime::createFromFormat('d/m/Y', $rpsData->dataEmissao);
-            $dtEmissaoFormatted = $dtEmissaoObj ? $dtEmissaoObj->format('Y-m-d\TH:i:sP') : date('Y-m-d\TH:i:sP');
+            $dtEmissaoObj = $this->parseFlexibleDate($rpsData->dataEmissao);
+            $dtEmissaoFormatted = $dtEmissaoObj->format('Y-m-d\TH:i:sP');
             $infNfse->appendChild($dom->createElement('DataEmissao', $dtEmissaoFormatted));
 
             // 4. IdentificacaoRps (Optional in InfNfse but good for tracking)
@@ -86,7 +86,8 @@ class XmlGeneratorService implements OutputGeneratorInterface
 
             // 7. Competencia
             // User Sample has Competencia: 2025-11-01T00:00:00-03:00
-            $competenciaObj = $dtEmissaoObj ? $dtEmissaoObj->modify('first day of this month') : new \DateTime();
+            $competenciaObj = clone $dtEmissaoObj;
+            $competenciaObj->modify('first day of this month');
             $competenciaFormatted = $competenciaObj->format('Y-m-d\TH:i:sP');
             $infNfse->appendChild($dom->createElement('Competencia', $competenciaFormatted));
 
@@ -235,5 +236,35 @@ class XmlGeneratorService implements OutputGeneratorInterface
         }
 
         return $dom->saveXML();
+    }
+    /**
+     * Parse date from various formats into a DateTime object
+     */
+    private function parseFlexibleDate(string $dateStr): \DateTime
+    {
+        $dateStr = trim($dateStr);
+        $dt = null;
+
+        // Try Y-m-d (ISO standard normalized by MappingService)
+        if (preg_match('/^\d{4}-\d{2}-\d{2}/', $dateStr)) {
+            $dt = \DateTime::createFromFormat('Y-m-d', substr($dateStr, 0, 10));
+        }
+        // Try d/m/Y (Brazilian standard)
+        elseif (preg_match('/^\d{2}\/\d{2}\/\d{4}/', $dateStr)) {
+            $dt = \DateTime::createFromFormat('d/m/Y', substr($dateStr, 0, 10));
+        }
+
+        // Final fallback: strtotime
+        if (!$dt) {
+            $ts = strtotime($dateStr);
+            if ($ts) {
+                $dt = new \DateTime("@$ts");
+                $dt->setTimezone(new \DateTimeZone('America/Bahia'));
+            } else {
+                $dt = new \DateTime(); // Last fallback to current date
+            }
+        }
+
+        return $dt;
     }
 }
