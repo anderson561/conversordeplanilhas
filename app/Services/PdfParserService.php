@@ -63,9 +63,18 @@ class PdfParserService
                 $middleSection = $matches[3]; // Everything between value and CNPJ
                 $cnpj = $matches[4];
 
-                // Split middle section by TAB to separate company name from description
-                $parts = preg_split('/[\t]+/', $middleSection);
-                $companyName = trim($parts[0]);
+                // Split middle section by TAB or multiple spaces to separate company name from noise/description
+                $parts = preg_split('/[\t]+|\s{4,}/', $middleSection);
+                $companyName = '';
+                foreach ($parts as $part) {
+                    $cleanPart = trim($part);
+                    // Skip empty or purely numeric/value patterns (e.g. 75.000,00)
+                    if (empty($cleanPart) || preg_match('/^[\d\.,]+(?:R\$)?$/ui', $cleanPart)) {
+                        continue;
+                    }
+                    $companyName = $cleanPart;
+                    break;
+                }
 
                 \Log::info('Pattern 4 Extracted', [
                     'date' => $date,

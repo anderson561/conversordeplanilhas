@@ -243,10 +243,19 @@ class MappingService
             ]);
         }
 
+        // Create Tomador with the 2 fields we have
+        \Log::debug("MappingService: Normalized Date", [
+            'raw' => $dataRaw,
+            'normalized' => $dataNormalized,
+            'emissao' => $dataEmissao
+        ]);
+
         $razaoSocial = $getValue('Razao Social');
 
         // Clean Razão Social - remove invalid patterns
         if ($razaoSocial) {
+            // Remove leading numeric values (leakage from totals)
+            $razaoSocial = preg_replace('/^[\d\.,\s]+/', '', $razaoSocial);
             // Remove pattern like "CNPJ;14.578.289/0003-05 JURIDICO"
             $razaoSocial = preg_replace('/CNPJ;?\s*\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\s+\w+/i', '', $razaoSocial);
             // Remove standalone "JURIDICO" or similar keywords
@@ -266,7 +275,8 @@ class MappingService
         }
 
         // Generate defaults for missing fields
-        $competencia = $dataEmissao ? date('Y-m', strtotime($dataEmissao)) . '-01' : date('Y-m-01');
+        // Fix: Use the actual dataEmissao for competencia as well, so accounting software treats it as the transaction date.
+        $competencia = $dataEmissao;
 
         // Create Endereco from mapped columns or defaults (Pass null to let Generator handle Fallbacks)
         $endereco = new EnderecoData(

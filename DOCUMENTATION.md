@@ -11,6 +11,7 @@ O sistema segue o padrão MVC do Laravel, enriquecido com a arquitetura de **Ser
 1.  **FileParserService**: 
     - Responsável pela extração bruta de dados.
     - Utiliza `PhpSpreadsheet` para arquivos Excel e `pdfparser` para PDFs.
+    - **Padrão 4 (Extratos)**: Implementa regex avançada para capturar Data, Valor e Razão Social em linhas onde os dados podem estar concatenados ou separados por TABS, com lógica de limpeza de duplicatas numéricas.
     - Implementa lógica de limpeza de caracteres especiais e normalização de números brasileiros.
 
 2.  **MappingService**:
@@ -25,6 +26,11 @@ O sistema segue o padrão MVC do Laravel, enriquecido com a arquitetura de **Ser
 
 4.  **ConversionService**:
     - Padronizado para utilizar a `GeneratorFactory`. O serviço está agora desacoplado dos geradores individuais, facilitando a adição de novos formatos.
+
+5.  **Normalização de Datas e Competência**:
+    - **Parsing Flexível**: Suporta múltiplos formatos (BR, ISO, Competência MM/YYYY).
+    - **Padronização**: Todas as notas são geradas com horário das `12:00:00` e fuso horário `America/Bahia` (-03:00).
+    - **Competência Dinâmica**: Tag `<Competencia>` sincronizada com a data real do serviço para evitar erros de importação no Domínio Sistemas.
 
 ## ⚙️ Fluxo de Processamento (Filas)
 

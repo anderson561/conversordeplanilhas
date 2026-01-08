@@ -64,7 +64,7 @@ let pollingInterval = null;
 const startPolling = () => {
     pollingInterval = setInterval(() => {
         router.reload({ preserveScroll: true });
-    }, 10000); // Check every 10 seconds unconditionally
+    }, 3000); // Check every 3 seconds unconditionally
 };
 
 const stopPolling = () => {

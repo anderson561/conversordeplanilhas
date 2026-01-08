@@ -113,10 +113,17 @@ const deleteUpload = (id) => {
 // Polling logic for real-time status updates
 let pollingInterval = null;
 
+const lastUpdated = ref(new Date().toLocaleTimeString());
+
 const startPolling = () => {
     pollingInterval = setInterval(() => {
-        router.reload({ preserveScroll: true });
-    }, 10000); // Check every 10 seconds unconditionally
+        router.reload({ 
+            preserveScroll: true,
+            onSuccess: () => {
+                lastUpdated.value = new Date().toLocaleTimeString();
+            }
+        });
+    }, 3000); // Check every 3 seconds unconditionally
 };
 
 const stopPolling = () => {
@@ -348,7 +355,16 @@ onUnmounted(() => {
 
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900 dark:text-gray-100">
-                        <h3 class="text-lg font-medium mb-4">Histórico</h3>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-medium">Histórico</h3>
+                            <div class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                                <span class="relative flex h-2 w-2 mr-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                                </span>
+                                Última atualização: {{ lastUpdated }}
+                            </div>
+                        </div>
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead>
                                 <tr>

@@ -85,9 +85,7 @@ class XmlGeneratorService implements OutputGeneratorInterface
             $infNfse->appendChild($dom->createElement('OptanteSimplesNacional', '1')); // 1-Sim (User sample has 1)
 
             // 7. Competencia
-            // User Sample has Competencia: 2025-11-01T00:00:00-03:00
-            $competenciaObj = clone $dtEmissaoObj;
-            $competenciaObj->modify('first day of this month');
+            $competenciaObj = $this->parseFlexibleDate($rpsData->competencia ?: $rpsData->dataEmissao);
             $competenciaFormatted = $competenciaObj->format('Y-m-d\TH:i:sP');
             $infNfse->appendChild($dom->createElement('Competencia', $competenciaFormatted));
 
@@ -244,31 +242,35 @@ class XmlGeneratorService implements OutputGeneratorInterface
     {
         $dateStr = trim($dateStr);
         $dt = null;
+        $tz = new \DateTimeZone('America/Bahia');
 
-        // Try Y-m-d (ISO standard normalized by MappingService)
-        if (preg_match('/^\d{4}-\d{2}-\d{2}/', $dateStr)) {
-            $dt = \DateTime::createFromFormat('Y-m-d', substr($dateStr, 0, 10));
+        // Standardize Y-m-d extraction
+        $baseDate = '';
+        if (preg_match('/^(\d{4}-\d{2}-\d{2})/', $dateStr, $m)) {
+            $baseDate = $m[1];
+            $dt = \DateTime::createFromFormat('Y-m-d', $baseDate, $tz);
+        } elseif (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})/', $dateStr, $m)) {
+            $baseDate = "{$m[3]}-{$m[2]}-{$m[1]}";
+            $dt = \DateTime::createFromFormat('Y-m-d', $baseDate, $tz);
         }
-        // Try d/m/Y (Brazilian standard)
-        elseif (preg_match('/^\d{2}\/\d{2}\/\d{4}/', $dateStr)) {
-            $dt = \DateTime::createFromFormat('d/m/Y', substr($dateStr, 0, 10));
-        }
-
-        // Final fallback: MM/YYYY or MM.YYYY as a last resort
-        if (!$dt && preg_match('/^(\d{2})[\/\.](\d{4})$/', $dateStr, $m)) {
-            $dt = \DateTime::createFromFormat('d/m/Y', "01/{$m[1]}/{$m[2]}");
+        // MM/YYYY or MM.YYYY
+        elseif (preg_match('/^(\d{2})[\/\.](\d{4})$/', $dateStr, $m)) {
+            $baseDate = "{$m[2]}-{$m[1]}-01";
+            $dt = \DateTime::createFromFormat('Y-m-d', $baseDate, $tz);
         }
 
         if (!$dt) {
             $ts = strtotime($dateStr);
             if ($ts) {
                 $dt = new \DateTime("@$ts");
-                $dt->setTimezone(new \DateTimeZone('America/Bahia'));
+                $dt->setTimezone($tz);
             } else {
-                // Return a fixed early date if totally invalid, to signal error rather than "today"
-                $dt = new \DateTime('2000-01-01');
+                $dt = new \DateTime('2000-01-01', $tz);
             }
         }
+
+        // Standardize to 12:00:00 to avoid "random" current system time and ensure consistency
+        $dt->setTime(12, 0, 0);
 
         return $dt;
     }
