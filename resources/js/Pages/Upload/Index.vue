@@ -123,8 +123,6 @@ const startPolling = () => {
 
         if (hasPending) {
             router.reload({ preserveScroll: true });
-        } else {
-            stopPolling();
         }
     }, 5000); // Check every 5 seconds
 };
@@ -374,6 +372,7 @@ onUnmounted(() => {
                                     <td class="px-6 py-4 whitespace-nowrap">{{ new Date(upload.created_at).toLocaleString() }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" v-if="upload.status === 'completed'">Concluído</span>
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" v-else-if="upload.status === 'processing'">Processando</span>
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" v-else-if="upload.status === 'pending'">Pendente</span>
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" v-else>Falha</span>
                                     </td>

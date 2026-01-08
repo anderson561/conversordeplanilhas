@@ -40,9 +40,12 @@ class PdfParserService
             if (empty($line))
                 continue;
 
-            // TRACKING: Look for any date in the line to update current context
+            // TRACKING: Look for any date or partial date (MM/YYYY) in the line to update current context
             if (preg_match('/(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))/', $line, $dateCheck)) {
                 $lastSeenDate = $dateCheck[1];
+            } elseif (preg_match('/\b(\d{2}[\/\.]\d{4})\b/', $line, $partialCheck)) {
+                // If we see something like 12/2025, treat it as 01/12/2025 for context
+                $lastSeenDate = "01/" . str_replace('.', '/', $partialCheck[1]);
             }
 
             // Pattern 4: Bank Statement Format (BANK DATE VALUE NAME ... CNPJ/CPF)

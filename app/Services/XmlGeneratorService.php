@@ -254,14 +254,19 @@ class XmlGeneratorService implements OutputGeneratorInterface
             $dt = \DateTime::createFromFormat('d/m/Y', substr($dateStr, 0, 10));
         }
 
-        // Final fallback: strtotime
+        // Final fallback: MM/YYYY or MM.YYYY as a last resort
+        if (!$dt && preg_match('/^(\d{2})[\/\.](\d{4})$/', $dateStr, $m)) {
+            $dt = \DateTime::createFromFormat('d/m/Y', "01/{$m[1]}/{$m[2]}");
+        }
+
         if (!$dt) {
             $ts = strtotime($dateStr);
             if ($ts) {
                 $dt = new \DateTime("@$ts");
                 $dt->setTimezone(new \DateTimeZone('America/Bahia'));
             } else {
-                $dt = new \DateTime(); // Last fallback to current date
+                // Return a fixed early date if totally invalid, to signal error rather than "today"
+                $dt = new \DateTime('2000-01-01');
             }
         }
 

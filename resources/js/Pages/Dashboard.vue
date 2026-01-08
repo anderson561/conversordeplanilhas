@@ -70,8 +70,6 @@ const startPolling = () => {
 
         if (hasPending) {
             router.reload({ preserveScroll: true });
-        } else {
-            stopPolling();
         }
     }, 5000); // Check every 5 seconds
 };
