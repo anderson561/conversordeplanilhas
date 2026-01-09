@@ -21,16 +21,16 @@ class PdfParserService
         // Regex patterns
         // Pattern 1: Date | Value | Name | CNPJ (Standard)
         // 01/07/2025 2.160,00 Sample Name 12.345.678/0001-90
-        $pattern1 = '/(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+(?:R\$)?)\s+(.+?)\s+(\d{2,3}[\.\/,]\d{3}[\.\/,]\d{3}[\.\/,][\d\.\/,\-]+\d{1,2})/u';
+        $pattern1 = '/(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+(?:R\$)?)\s+(.+?)\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})/u';
 
         // Pattern 2: Name | CNPJ | Value | Date (User Image)
         // Sample Name 12.345.678/0001-90 2.160,00 01/07/2025
-        $pattern2 = '/(.+?)\s+(\d{2,3}[\.\/,]\d{3}[\.\/,]\d{3}[\.\/,][\d\.\/,\-]+\d{1,2})\s+([\d\.,]+(?:R\$)?)\s+(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))/u';
+        $pattern2 = '/(.+?)\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})\s+([\d\.,]+(?:R\$)?)\s+(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))/u';
 
         // Pattern 4: Bank Statement Format (BANK DATE VALUE NAME ... CNPJ)
         // BANCO BRASIL 04/11/2025 31.317,98IG PROJETO, CONSULTORIA E ENTRETENIMENTO LTDA ALUGUEL IMOVEL 40.690.212/001-90
         // Note: Value and Name may be concatenated without space
-        $pattern4 = '/(?:BANCO\s+\w+|[\w\s\.-]+?)\s+(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+)\s*(.+?)\s+(\d{2,3}[\.\/,]\d{3}[\.\/,]\d{3}[\.\/,][\d\.\/,\-]+\d{1,2})/ui';
+        $pattern4 = '/(?:BANCO\s+\w+|[\w\s\.-]+?)\s+(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+)\s*(.+?)\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})/ui';
 
         $count = count($lines);
         $lastSeenDate = null; // Store the last valid date found in the document
@@ -54,7 +54,7 @@ class PdfParserService
             // Note: Value and Name may be concatenated, and TAB separates name from description
             // CNPJ: XX.XXX.XXX/XXX-XX or XX.XXX.XXX/XXXX-XX
             // CPF: XXX.XXX.XXX-XX
-            if (preg_match('/(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+)(.+?)(\d{2,3}[\.\/,]\d{3}[\.\/,]\d{3}[\.\/,][\d\.\/,\-]+\d{1,2})/u', $line, $matches)) {
+            if (preg_match('/(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+)(.+?)(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})/u', $line, $matches)) {
                 \Log::info('Pattern 4 Matched', ['line' => $line, 'matches' => $matches]);
 
                 $date = $matches[1];
