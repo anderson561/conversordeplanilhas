@@ -12,6 +12,10 @@ O sistema segue o padrão MVC do Laravel, enriquecido com a arquitetura de **Ser
     - Responsável pela extração bruta de dados.
     - Utiliza `PhpSpreadsheet` para arquivos Excel e `pdfparser` para PDFs.
     - **Padrão 4 (Extratos)**: Implementa regex avançada para capturar Data, Valor e Razão Social em linhas onde os dados podem estar concatenados ou separados por TABS, com lógica de limpeza de duplicatas numéricas.
+    - **Robustez (Regex)**: Novas regras para lidar com erros comuns de OCR/Digitação em PDFs oficiais: 
+        - CPFs com pontos flutuantes extras (`021.751.475.-84`).
+        - CNPJs usando vírgulas como separador (`13,323.274/0001-63`).
+        - Remoção automática de prefixos numéricos em Razões Sociais.
     - Implementa lógica de limpeza de caracteres especiais e normalização de números brasileiros.
 
 2.  **MappingService**:
@@ -29,8 +33,8 @@ O sistema segue o padrão MVC do Laravel, enriquecido com a arquitetura de **Ser
 
 5.  **Normalização de Datas e Competência**:
     - **Parsing Flexível**: Suporta múltiplos formatos (BR, ISO, Competência MM/YYYY).
-    - **Padronização**: Todas as notas são geradas com horário das `12:00:00` e fuso horário `America/Bahia` (-03:00).
-    - **Competência Dinâmica**: Tag `<Competencia>` sincronizada com a data real do serviço para evitar erros de importação no Domínio Sistemas.
+    - **Padronização**: Todas as notas são geradas com horário das `12:00:00` e fuso horário `America/Bahia` (-03:00) na tag `<DataEmissao>`.
+    - **Competência Dinâmica (Fix Domínio)**: Tag `<Competencia>` é gerada estritamente no formato `AAAA-MM-DD` (sem horário) para forçar o sistema Domínio a reconhecer a data exata em vez de padronizar para o dia 01.
 
 ## ⚙️ Fluxo de Processamento (Filas)
 
