@@ -84,8 +84,8 @@ class XmlGeneratorService implements OutputGeneratorInterface
             // 6. OptanteSimplesNacional
             $infNfse->appendChild($dom->createElement('OptanteSimplesNacional', '1')); // 1-Sim (User sample has 1)
 
-            // 7. Competencia - EXACT parity with DataEmissao as requested by user
-            $infNfse->appendChild($dom->createElement('Competencia', $dtEmissaoFormatted));
+            // 7. Competencia - Format as Y-m-d to force Domínio to respect the specific day (Fix for 01/12 issue)
+            $infNfse->appendChild($dom->createElement('Competencia', $dtEmissaoObj->format('Y-m-d')));
 
             $infNfse->appendChild($dom->createElement('NfseSubstituida', '0'));
 
