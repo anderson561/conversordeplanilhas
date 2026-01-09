@@ -29,7 +29,12 @@ class ProcessConversionJob implements ShouldQueue
         \App\Services\MappingService $mapper,
         \App\Services\ConversionService $converter
     ): void {
+        // Increase memory limit for worker process
+        ini_set('memory_limit', '1024M');
+        set_time_limit(600); // 10 minutes
+
         try {
+            \Log::info("Starting Conversion Job for Upload: {$this->upload->id}");
             $this->conversionJob->update(['started_at' => now(), 'status' => 'processing']);
             $this->upload->update(['status' => 'processing']);
 
@@ -49,13 +54,14 @@ class ProcessConversionJob implements ShouldQueue
 
             $this->upload->update(['status' => 'completed']);
             $this->conversionJob->update(['status' => 'completed', 'completed_at' => now()]);
+            \Log::info("Conversion Job Completed Successfully for Upload: {$this->upload->id}");
 
             // Notify User
             \Illuminate\Support\Facades\Mail::to($this->upload->user->email)
                 ->send(new \App\Mail\ConversionCompletedMail($this->conversionJob));
 
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Background Conversion Failed: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Background Conversion Failed for Upload ' . $this->upload->id . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
 
             $this->upload->update(['status' => 'failed']);
             $this->conversionJob->update([
