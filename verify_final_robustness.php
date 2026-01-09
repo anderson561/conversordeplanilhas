@@ -39,9 +39,10 @@ $gen = new XmlGeneratorService();
 // Let's trust the ViewFile we did earlier. The logic was:
 // $dt->setTime(12, 0, 0) and $dt->setTimezone(new DateTimeZone('America/Bahia'));
 
-$dt = DateTime::createFromFormat('d/m/Y', '29/12/2025');
+$tz = new DateTimeZone('America/Bahia');
+$dt = DateTime::createFromFormat('d/m/Y', '29/12/2025', $tz);
 $dt->setTime(12, 0, 0);
-$dt->setTimezone(new DateTimeZone('America/Bahia'));
+// already in correct timezone
 $expectedIso = $dt->format(DATE_ATOM);
 $expectedCompetencia = $dt->format('Y-m-d');
 

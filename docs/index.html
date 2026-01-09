@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Conversor XML | Automação Fiscal Inteligente</title>
+    <meta name="description"
+        content="Converta PDFs de prefeituras para XML compatível com Domínio Sistemas e ABRASF. Automação fiscal com inteligência artificial.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #0f172a;
+            --accent: #38bdf8;
+            --text-main: #334155;
+            --text-light: #64748b;
+            --bg-light: #f8fafc;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-main);
+            background-color: var(--bg-light);
+            overflow-x: hidden;
+        }
+
+        /* Utility */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            border: 2px solid var(--white);
+            color: var(--white);
+            margin-left: 1rem;
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 160px 0 100px;
+            background: linear-gradient(135deg, var(--secondary) 0%, #1e293b 100%);
+            color: var(--white);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
+            animation: pulse 15s infinite;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: #94a3b8;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Features */
+        .features {
+            padding: 100px 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #f1f5f9;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            background: #eff6ff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+
+        .card p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        /* Tech Stack */
+        .tech-stack {
+            background: var(--secondary);
+            padding: 80px 0;
+            color: var(--white);
+            text-align: center;
+        }
+
+        .tech-logos {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+            opacity: 0.7;
+        }
+
+        .tech-item {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        footer {
+            background: #ffffff;
+            padding: 4rem 0;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .footer-text {
+            color: var(--text-light);
+            margin-top: 1rem;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.2;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="container">
+            <nav>
+                <a href="#" class="logo">
+                    XML<span>Converter</span>
+                </a>
+                <div>
+                    <span style="color: var(--text-light); font-size: 0.9rem;">v1.2.0 Stable</span>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container hero-content">
+            <h1>Conversão Fiscal de <br><span>PDF para XML</span></h1>
+            <p>Transforme relatórios fiscais caóticos em arquivos XML padronizados para o Domínio Sistemas. Automação
+                inteligente para contabilidade moderna.</p>
+            <div>
+                <a href="https://github.com/anderson561/conversordeplanilhas" class="btn btn-primary">Ver no GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Recursos Poderosos</h2>
+                <p>Desenvolvido para eliminar o trabalho manual de digitação de notas.</p>
+            </div>
+            <div class="grid">
+                <!-- Feature 1 -->
+                <div class="card">
+                    <div class="icon-box">📄</div>
+                    <h3>Parsing Inteligente</h3>
+                    <p>Habilidade avançada de leitura (Pattern 4 regex) que corrige erros comuns de OCR, captura
+                        pontuação malformada e limpa ruídos de texto.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="card">
+                    <div class="icon-box">⚡</div>
+                    <h3>Integração Domínio</h3>
+                    <p>XMLs gerados especificamente para importação sem erros no Domínio Sistemas. Formatação estrita de
+                        competência (AAAA-MM-DD).</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="card">
+                    <div class="icon-box">🛡️</div>
+                    <h3>Arquitetura Robusta</h3>
+                    <p>Processamento em fila (Queue Worker) com gerenciamento de memória otimizado para lidar com
+                        grandes volumes de arquivos.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div class="card">
+                    <div class="icon-box">📅</div>
+                    <h3>Paridade de Datas</h3>
+                    <p>Garantia matemática que a Data de Emissão e Competência estejam perfeitamente sincronizadas,
+                        evitando glosas fiscais.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="tech-stack">
+        <div class="container">
+            <h2>Tecnologia de Ponta</h2>
+            <div class="tech-logos">
+                <div class="tech-item">Laravel 10</div>
+                <div class="tech-item">PHP 8.2</div>
+                <div class="tech-item">Redis Queue</div>
+                <div class="tech-item">Tailwind CSS</div>
+                <div class="tech-item">Inertia.js</div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="logo" style="justify-content: center; margin-bottom: 1rem;">
+                XML<span>Converter</span>
+            </div>
+            <p class="footer-text">© 2026 SaaS Conversor. Todos os direitos reservados.</p>
+            <p class="footer-text" style="font-size: 0.8rem; margin-top: 0.5rem;">Desenvolvido com ❤️ e IA.</p>
+        </div>
+    </footer>
+
+</body>
+
+</html>

@@ -28,6 +28,11 @@ Converta planilhas financeiras (Excel/PDF) em arquivos XML compatíveis com sist
 - Node.js & NPM
 - Redis (Obrigatório para o sistema de filas)
 
+# 🚀 SaaS Conversor: PDF para XML (ABRASF/Domínio)
+
+[![GitHub Pages](https://img.shields.io/badge/Status-Online-success)](https://anderson561.github.io/conversordeplanilhas/)
+[![Laravel](https://img.shields.io/badge/Laravel-10.x-red)](https://laravel.com)
+
 ### Passo a Passo
 
 1. **Clonar o Repositório**
