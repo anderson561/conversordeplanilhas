@@ -40,6 +40,13 @@ class PdfParserService
             if (empty($line))
                 continue;
 
+            // IGNORE: Income lines (Crédito/Créditos) should not be processed as expenses
+            // Uses word boundaries (\b) to avoid false positives like "Acredito"
+            if (preg_match('/\b(créditos?|creditos?)\b/ui', $line)) {
+                \Log::info('Skipping ignored line (Income/Crédito)', ['line' => $line]);
+                continue;
+            }
+
             // TRACKING: Look for any date or partial date (MM/YYYY) in the line to update current context
             if (preg_match('/(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))/', $line, $dateCheck)) {
                 $lastSeenDate = $dateCheck[1];
