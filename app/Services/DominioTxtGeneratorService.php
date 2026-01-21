@@ -55,7 +55,7 @@ class DominioTxtGeneratorService implements OutputGeneratorInterface
             $col05 = $this->sanitize($endereco, 150);
 
             // 6. Número Documento
-            $col06 = $currentNumber++;
+            $col06 = (string) ($rps->numero ?: $currentNumber++);
 
             // 7. Série
             $col07 = $rps->serie;

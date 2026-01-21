@@ -88,6 +88,11 @@ class MappingService
         if ($cep)
             $mapping['CEP'] = $cep;
 
+        // Smart detection for Document Number
+        $numRps = $this->detectColumn($availableColumns, ['número rps', 'numero rps', 'rps', 'numero', 'número', 'documento', 'docto', 'nf', 'nfe']);
+        if ($numRps)
+            $mapping['NumeroRPS'] = $numRps;
+
         return $mapping;
     }
 
@@ -370,11 +375,12 @@ class MappingService
             codigoMunicipio: '2927408', // Salvador/BA
         );
 
-        // Generate sequential RPS number based on row index
+        // Generate sequential RPS number based on row index (Fallback)
         static $rpsCounter = 1;
+        $numeroFinal = $getValue('NumeroRPS') ?: (string) $rpsCounter++;
 
         return new RpsData(
-            numero: (string) $rpsCounter++,
+            numero: (string) $numeroFinal,
             serie: '1',
             tipo: '1', // RPS
             dataEmissao: $dataEmissao,
