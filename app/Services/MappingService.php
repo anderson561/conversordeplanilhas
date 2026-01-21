@@ -285,11 +285,16 @@ class MappingService
 
         $cnpj = $sanitizeCpfCnpj($getValue('CNPJ'));
 
-        // Debug Log for specific row failures (only log if meaningful data is present but dropped)
-        if ($valor == 0 && empty($cnpj) && empty($razaoSocial)) {
-            // likely a true empty row, ignore
-        } else if ($valor == 0 && empty($cnpj)) {
-            \Log::debug('MappingService: Row has 0 value and empty CNPJ', ['raw_value' => $valorRaw, 'parsed_valor' => $valor, 'name' => $razaoSocial]);
+        // Skip rows with zero or negative values (not valid transactions)
+        if ($valor <= 0) {
+            if (!empty($razaoSocial) || !empty($cnpj)) {
+                \Log::info('MappingService: Skipping row with zero/negative value', [
+                    'valor' => $valor,
+                    'name' => $razaoSocial,
+                    'cnpj' => $cnpj
+                ]);
+            }
+            return null;
         }
 
         // Generate defaults for missing fields
@@ -368,6 +373,20 @@ class MappingService
         $dateStr = trim((string) $date);
         if (empty($dateStr))
             return null;
+
+        // Handle Excel serial numbers (e.g., 46013 = 02/12/2025)
+        // Excel stores dates as days since 1900-01-01
+        if (is_numeric($dateStr) && $dateStr > 1 && $dateStr < 100000) {
+            try {
+                // Excel epoch is 1900-01-01, but Excel incorrectly treats 1900 as a leap year
+                // So we use 1899-12-30 as the base date
+                $excelEpoch = new \DateTime('1899-12-30');
+                $excelEpoch->modify("+{$dateStr} days");
+                return $excelEpoch->format('Y-m-d');
+            } catch (\Exception $e) {
+                \Log::warning("Failed to convert Excel serial number", ['serial' => $dateStr, 'error' => $e->getMessage()]);
+            }
+        }
 
         // Clean common noise
         $dateStr = str_replace('.', '/', $dateStr);
