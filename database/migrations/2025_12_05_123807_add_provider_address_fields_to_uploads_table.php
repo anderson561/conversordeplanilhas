@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->string('provider_cep', 10)->nullable()->after('provider_bairro');
             $table->string('provider_municipio')->nullable()->after('provider_cep');
             $table->string('provider_uf', 2)->nullable()->after('provider_municipio');
-            $table->string('provider_fone', 20)->nullable()->after('provider_uf');
+            $table->string('provider_fone', 50)->nullable()->after('provider_uf');
         });
 
         Schema::table('conversion_jobs', function (Blueprint $table) {

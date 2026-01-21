@@ -34,7 +34,7 @@ class UploadController extends Controller
             'provider_cep' => 'nullable|string|max:10',
             'provider_municipio' => 'nullable|string|max:100',
             'provider_uf' => 'nullable|string|size:2',
-            'provider_fone' => 'nullable|string|max:20',
+            'provider_fone' => 'nullable|string|max:50',
             'starting_number' => 'nullable|integer|min:1',
         ]);
 
