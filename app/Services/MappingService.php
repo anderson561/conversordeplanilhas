@@ -163,6 +163,15 @@ class MappingService
             return false;
         }
 
+        // Keyword Filtering (TRANSF vs VENDA)
+        $isVenda = str_contains($name, 'VENDA');
+        $isTransf = str_contains($name, 'TRANSF') || str_contains($name, 'TRANSFERÊNCIA') || str_contains($name, 'TRANSFERENCIA') || str_contains($name, 'CRÉDITO') || str_contains($name, 'CREDITO');
+
+        if ($isTransf && !$isVenda) {
+            \Log::info("MappingService: Valid - Skipping Transfer/Income Row", ['name' => $name]);
+            return false;
+        }
+
         // Skip Empty Name AND Empty CNPJ
         if (empty($name) && empty($cnpj)) {
             // Only log if valor is significant, otherwise it's just a blank row

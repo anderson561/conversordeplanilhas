@@ -40,10 +40,13 @@ class PdfParserService
             if (empty($line))
                 continue;
 
+            // Keyword Filtering
+            $isVenda = preg_match('/\bvendas?\b/ui', $line);
+            $isIgnore = preg_match('/\b(créditos?|creditos?|transf\.?|transferências?|transferencia)\b/ui', $line);
+
             // IGNORE: Income lines (Crédito/Transferência) should not be processed as expenses
-            // Uses word boundaries (\b) to avoid false positives
-            // Matches: crédito, credito, créditos, creditos, transf, transf., transferência, transferências
-            if (preg_match('/\b(créditos?|creditos?|transf\.?|transferências?)\b/ui', $line)) {
+            // UNLESS it's a sale (venda/vendas)
+            if ($isIgnore && !$isVenda) {
                 \Log::info('Skipping ignored line (Income/Transfer)', ['line' => $line]);
                 continue;
             }
