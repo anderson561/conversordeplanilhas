@@ -40,9 +40,12 @@ class PdfParserService
             if (empty($line))
                 continue;
 
-            // Keyword Filtering: Income lines (Crédito/Transferência/Resgate) should be ignored
-            // These keywords have ABSOLUTE precedence over any other word (like 'vendas')
-            if (preg_match('/\b(créditos?|creditos?|transf\.?|transferências?|transferencia|resgates?)\b/ui', $line)) {
+            // Keyword Filtering (Venda/Vendas ALWAYS takes precedence)
+            if (preg_match('/\b(vendas?)\b/ui', $line)) {
+                // Keep processing if it's a sale
+            }
+            // Otherwise, Income lines (Crédito/Transferência/Resgate) should be ignored
+            elseif (preg_match('/\b(créditos?|creditos?|transf\.?|transferências?|transferencia|resgates?)\b/ui', $line)) {
                 \Log::info('Skipping ignored line (Income/Transfer/Resgate Priority)', ['line' => $line]);
                 continue;
             }

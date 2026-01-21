@@ -162,15 +162,14 @@ class MappingService
             return false;
         }
 
-        // Skip Totals / Titles
-        if (str_contains($name, 'TOTAL') || str_contains($name, 'ALUGUEIS') || str_contains($name, 'RESIDENCIAIS')) {
-            \Log::info("MappingService: Valid - Skipping Total/Title Row", ['name' => $name]);
-            return false;
+        // ALWAYS INCLUDE Venda/Vendas
+        if (str_contains($name, 'VENDA') || str_contains($name, 'VENDAS')) {
+            return true;
         }
 
-        // Check for common stop-words in the name (Header/Totals)
+        // Skip Totals / Titles / Summary words
         if (str_contains($name, 'TOTAL') || str_contains($name, 'ALUGUEIS') || str_contains($name, 'RESIDENCIAIS')) {
-            \Log::info("MappingService: Valid - Skipping Total/Title Row", ['name' => $name]);
+            \Log::info("MappingService: Valid - Skipping Total/Title Row (No 'VENDA' present)", ['name' => $name]);
             return false;
         }
 
@@ -214,19 +213,24 @@ class MappingService
         // NEW: Absolute Keyword Filtering for the WHOLE ROW
         // This catches keywords like TRANSF, CREDITO, RESGATE even if they aren't in the name field.
         $rowString = mb_strtoupper(implode(' ', array_filter(array_values($row))));
-        $isForbidden = str_contains($rowString, 'TRANSF') ||
-            str_contains($rowString, 'TRANSFERÊNCIA') ||
-            str_contains($rowString, 'TRANSFERENCIA') ||
-            str_contains($rowString, 'CRÉDITO') ||
-            str_contains($rowString, 'CREDITO') ||
-            str_contains($rowString, 'RESGATE');
 
-        if ($isForbidden) {
-            \Log::info("MappingService: Skipping row due to forbidden keyword found in content", [
-                'name' => $getValue('Razao Social'),
-                'matched_keywords' => true
-            ]);
-            return null;
+        $isVenda = str_contains($rowString, 'VENDA') || str_contains($rowString, 'VENDAS');
+
+        if (!$isVenda) {
+            $isForbidden = str_contains($rowString, 'TRANSF') ||
+                str_contains($rowString, 'TRANSFERÊNCIA') ||
+                str_contains($rowString, 'TRANSFERENCIA') ||
+                str_contains($rowString, 'CRÉDITO') ||
+                str_contains($rowString, 'CREDITO') ||
+                str_contains($rowString, 'RESGATE');
+
+            if ($isForbidden) {
+                \Log::info("MappingService: Skipping row due to forbidden keyword found in content", [
+                    'name' => $getValue('Razao Social'),
+                    'matched_keywords' => true
+                ]);
+                return null;
+            }
         }
 
         // Helper to sanitize CNPJ/CPF - remove all non-numeric characters
