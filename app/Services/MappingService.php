@@ -229,8 +229,10 @@ class MappingService
             $valor = (float) $valorClean;
         }
 
-        // Clean Date
-        $dataRaw = $getValue('Data');
+        // Clean Date - Try multiple column names
+        $dataRaw = $getValue('Data')
+            ?? $getValue('Data Recebimento')
+            ?? $getValue('Data de Recebimento');
         $dataNormalized = $this->normalizeDate($dataRaw);
 
         // Fallback: Try to use Competência field if Data is missing/invalid
