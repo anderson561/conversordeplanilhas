@@ -6,7 +6,7 @@ Converta planilhas financeiras (Excel/PDF) em arquivos XML compatíveis com sist
 
 - **Mapeamento Inteligente**: Detecção automática de colunas críticas (Data, Valor, Razão Social, CNPJ).
 - **Suporte Multi-Formato**: Processamento nativo de arquivos `.xlsx`, `.xls`, `.csv` e `.pdf`.
-- **Extração Avançada de PDF**: Reconhecimento inteligente de extratos bancários (Padrão 4) e notas fiscais com formatação irregular (CNPJ com vírgulas, CPF com pontos extras).
+- **Extração Avançada de PDF**: Reconhecimento inteligente de extratos bancários (Padrão 4) e notas fiscais com formatação irregular (CNPJ com vírgulas, CPF com pontos extras). **Novo:** Filtro automático de linhas de crédito/transferência (receitas) para processar apenas despesas.
 - **Precisão Fiscal (Domínio/ABRASF)**: Geração de XML com `<Competencia>` no formato estrito (`AAAA-MM-DD`) para evitar erros de importação (o famoso "dia 01") e timestamps padronizados (`12:00:00 -03:00`) na emissão.
 - **Fila de Processamento (Scalability)**: Arquivos grandes são processados em segundo plano via Redis.
 - **Notificações em Tempo Real**: Interface com polling de 3s e alertas por e-mail.

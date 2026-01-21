@@ -40,10 +40,11 @@ class PdfParserService
             if (empty($line))
                 continue;
 
-            // IGNORE: Income lines (Crédito/Créditos) should not be processed as expenses
-            // Uses word boundaries (\b) to avoid false positives like "Acredito"
-            if (preg_match('/\b(créditos?|creditos?)\b/ui', $line)) {
-                \Log::info('Skipping ignored line (Income/Crédito)', ['line' => $line]);
+            // IGNORE: Income lines (Crédito/Transferência) should not be processed as expenses
+            // Uses word boundaries (\b) to avoid false positives
+            // Matches: crédito, credito, créditos, creditos, transf, transf., transferência, transferências
+            if (preg_match('/\b(créditos?|creditos?|transf\.?|transferências?)\b/ui', $line)) {
+                \Log::info('Skipping ignored line (Income/Transfer)', ['line' => $line]);
                 continue;
             }
 

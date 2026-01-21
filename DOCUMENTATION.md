@@ -16,6 +16,7 @@ O sistema segue o padrão MVC do Laravel, enriquecido com a arquitetura de **Ser
         - CPFs com pontos flutuantes extras (`021.751.475.-84`).
         - CNPJs usando vírgulas como separador (`13,323.274/0001-63`).
         - Remoção automática de prefixos numéricos em Razões Sociais.
+    - **Filtro de Receitas**: Implementado regex `/\b(créditos?|creditos?|transf\.?|transferências?)\b/ui` para ignorar linhas contendo "crédito", "credito", "créditos", "creditos", "transf", "transf.", "transferência" ou "transferências", evitando processamento de entradas de receita/transferências em extratos bancários.
     - Implementa lógica de limpeza de caracteres especiais e normalização de números brasileiros.
 
 2.  **MappingService**:
