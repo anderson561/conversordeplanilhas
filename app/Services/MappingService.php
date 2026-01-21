@@ -163,12 +163,11 @@ class MappingService
             return false;
         }
 
-        // Keyword Filtering (TRANSF vs VENDA)
-        $isVenda = str_contains($name, 'VENDA');
+        // Keyword Filtering (TRANSF/CREDITO) - Absolute Precedence
         $isTransf = str_contains($name, 'TRANSF') || str_contains($name, 'TRANSFERÊNCIA') || str_contains($name, 'TRANSFERENCIA') || str_contains($name, 'CRÉDITO') || str_contains($name, 'CREDITO');
 
-        if ($isTransf && !$isVenda) {
-            \Log::info("MappingService: Valid - Skipping Transfer/Income Row", ['name' => $name]);
+        if ($isTransf) {
+            \Log::info("MappingService: Valid - Skipping Forbidden Keyword (Income/Transfer)", ['name' => $name]);
             return false;
         }
 
