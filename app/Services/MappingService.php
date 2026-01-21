@@ -377,10 +377,10 @@ class MappingService
             return "{$matches[1]}-{$matches[2]}-{$matches[3]}";
         }
 
-        // Try d/m/Y or d/m/y 
-        if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4}|\d{2})/', $dateStr, $matches)) {
-            $day = $matches[1];
-            $month = $matches[2];
+        // Try d/m/Y or d/m/y (supports both 12/02/2025 and 12/2/2025 formats)
+        if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})/', $dateStr, $matches)) {
+            $day = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+            $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
             $year = $matches[3];
 
             if (strlen($year) === 2) {
