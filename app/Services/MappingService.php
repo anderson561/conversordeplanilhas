@@ -163,8 +163,8 @@ class MappingService
             return false;
         }
 
-        // Keyword Filtering (TRANSF/CREDITO) - Absolute Precedence
-        $isTransf = str_contains($name, 'TRANSF') || str_contains($name, 'TRANSFERÊNCIA') || str_contains($name, 'TRANSFERENCIA') || str_contains($name, 'CRÉDITO') || str_contains($name, 'CREDITO');
+        // Keyword Filtering (TRANSF/CREDITO/RESGATE) - Absolute Precedence
+        $isTransf = str_contains($name, 'TRANSF') || str_contains($name, 'TRANSFERÊNCIA') || str_contains($name, 'TRANSFERENCIA') || str_contains($name, 'CRÉDITO') || str_contains($name, 'CREDITO') || str_contains($name, 'RESGATE');
 
         if ($isTransf) {
             \Log::info("MappingService: Valid - Skipping Forbidden Keyword (Income/Transfer)", ['name' => $name]);
