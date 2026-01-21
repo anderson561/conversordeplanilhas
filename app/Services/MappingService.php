@@ -181,7 +181,7 @@ class MappingService
         return true;
     }
 
-    private function mapSingleRow(array $row, array $mappingRules): RpsData
+    private function mapSingleRow(array $row, array $mappingRules): ?RpsData
     {
         // Debug: Trace first few rows to see what keys are being accessed
         static $traceCount = 0;
