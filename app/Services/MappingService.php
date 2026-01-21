@@ -233,7 +233,23 @@ class MappingService
         $dataRaw = $getValue('Data');
         $dataNormalized = $this->normalizeDate($dataRaw);
 
-        // Remove fallback to today. Use a fixed old date to flag issues.
+        // Fallback: Try to use Competência field if Data is missing/invalid
+        // Competência format: AAAAMM (e.g., 202602 = February 2026)
+        if (!$dataNormalized) {
+            $competenciaRaw = $getValue('Competencia') ?? $getValue('Competência');
+            if ($competenciaRaw && preg_match('/^(\d{4})(\d{2})$/', $competenciaRaw, $matches)) {
+                $year = $matches[1];
+                $month = $matches[2];
+                // Use first day of the competência month
+                $dataNormalized = "$year-$month-01";
+                \Log::info("MappingService: Using Competência as date fallback", [
+                    'competencia' => $competenciaRaw,
+                    'generated_date' => $dataNormalized
+                ]);
+            }
+        }
+
+        // Final fallback: Use a fixed old date to flag issues.
         $dataEmissao = $dataNormalized ?: '2000-01-01';
 
         if (!$dataNormalized && $dataRaw) {
