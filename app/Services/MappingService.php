@@ -55,7 +55,7 @@ class MappingService
             $mapping['CNPJ'] = $cnpj;
 
         // Smart detection for Date
-        $dataCol = $this->detectColumn($availableColumns, ['data recebimento', 'dt recebimento', 'data emissao', 'data docto', 'dt. pagto', 'dt.', 'vencimento']);
+        $dataCol = $this->detectColumn($availableColumns, ['data recebimento', 'dt recebimento', 'data emissao', 'data docto', 'dt. pagto', 'dt.', 'vencimento', 'competencia', 'competência']);
         if ($dataCol)
             $mapping['Data'] = $dataCol;
 
