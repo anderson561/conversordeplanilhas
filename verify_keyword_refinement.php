@@ -1,8 +1,8 @@
 <?php
 
-// Test cases for keyword filtering
+// Test cases for keyword filtering - ABSOLUTE PRECEDENCE
 $testCases = [
-    ['line' => 'TRANSF VENDA DE MERCADORIA', 'expected' => 'INCLUDE (Venda wins)'],
+    ['line' => 'TRANSF VENDA DE MERCADORIA', 'expected' => 'IGNORE'], // Transf wins now
     ['line' => 'TRANSF ENTRE CONTAS', 'expected' => 'IGNORE'],
     ['line' => 'TRANSFERENCIA RECEBIDA', 'expected' => 'IGNORE'],
     ['line' => 'TRANSFERÊNCIA RECEBIDA', 'expected' => 'IGNORE'],
@@ -12,15 +12,13 @@ $testCases = [
     ['line' => 'PRESTAÇÃO DE SERVIÇO', 'expected' => 'INCLUDE (Normal expense)'],
 ];
 
-echo "Testing Keyword Filtering Logic...\n\n";
+echo "Testing ABSOLUTE PRECEDENCE Keyword Filtering Logic...\n\n";
 
 // PdfParserService Logic Mock
 function pdfParserTest($line)
 {
-    $isVenda = preg_match('/\bvendas?\b/ui', $line);
-    $isIgnore = preg_match('/\b(créditos?|creditos?|transf\.?|transferências?|transferencia)\b/ui', $line);
-
-    if ($isIgnore && !$isVenda) {
+    // New Logic: Forbidden keywords have absolute precedence
+    if (preg_match('/\b(créditos?|creditos?|transf\.?|transferências?|transferencia)\b/ui', $line)) {
         return "IGNORE";
     }
     return "INCLUDE";
@@ -30,10 +28,10 @@ function pdfParserTest($line)
 function mappingServiceTest($line)
 {
     $name = mb_strtoupper($line);
-    $isVenda = str_contains($name, 'VENDA');
+    // New Logic: Forbidden keywords have absolute precedence
     $isTransf = str_contains($name, 'TRANSF') || str_contains($name, 'TRANSFERÊNCIA') || str_contains($name, 'TRANSFERENCIA') || str_contains($name, 'CRÉDITO') || str_contains($name, 'CREDITO');
 
-    if ($isTransf && !$isVenda) {
+    if ($isTransf) {
         return "IGNORE";
     }
     return "INCLUDE";
