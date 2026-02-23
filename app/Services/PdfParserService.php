@@ -40,14 +40,16 @@ class PdfParserService
             if (empty($line))
                 continue;
 
-            // Keyword Filtering (Venda/Vendas ALWAYS takes precedence)
-            if (preg_match('/\b(vendas?)\b/ui', $line)) {
-                // Keep processing if it's a sale
-            }
-            // Otherwise, Income lines (Crédito/Transferência/Resgate) should be ignored
-            elseif (preg_match('/\b(créditos?|creditos?|transf\.?|transferências?|transferencia|resgates?)\b/ui', $line)) {
-                \Log::info('Skipping ignored line (Income/Transfer/Resgate Priority)', ['line' => $line]);
+            // Keyword Filtering: Income/Transfer/Bank Fees/Taxes should be ignored
+            // Adding more stop-words to eliminate "indevidas" lines (taxes/fees/outflows)
+            if (preg_match('/\b(devolução|devolucao|devoluções|devolucoes|devolvida|devolvidas|caução|caucao|cauções|caucoes|total\s+aluguel|total\s+de\s+aluguel|totais\s+de\s+alugueis|créditos?|creditos?|transf\b|transf\.|transferências?|transferencia|resgates?|rentab\b|rentab\.?|dividendos?|iof|irrf|tarifas?|tar\b|tar\.|taxas?|impostos?|juros|encargos|debitos?|pagto|pagamentos?|contribuição|contribuicao)\b/ui', $line)) {
+                \Log::info('Skipping ignored line (Exclusion Keyword Matched)', ['line' => $line]);
                 continue;
+            }
+
+            // Keyword Filtering (Venda/Aluguel priority for INCLUSION over stop-words)
+            if (preg_match('/\b(vendas?|aluguéis?|aluguel)\b/ui', $line)) {
+                // Keep processing if it's a sale or rent (even if it contains stop-words like 'TOTAL')
             }
 
             // TRACKING: Look for any date or partial date (MM/YYYY) in the line to update current context
@@ -99,17 +101,26 @@ class PdfParserService
                 $companyName = preg_replace('/\s+(ALUGUEL|VENDA|LOCACAO|SERVICO|PRESTACAO)\s+\w+\s*$/ui', '', $companyName);
                 $companyName = trim($companyName);
 
-                if (!empty($companyName) && !empty($cnpj)) {
+                $cleanCompany = trim($companyName);
+                $cleanCnpj = preg_replace('/\D/', '', $cnpj);
+
+                // Hard Block: Receita Federal / Bank Tax CNPJs that aren't sales
+                if ($cleanCnpj === '12453169000186' && !str_contains(mb_strtoupper($cleanCompany), 'VENDA')) {
+                    \Log::info('Pattern 4 Skipping: Receita Federal Tax/Fee row', ['cnpj' => $cleanCnpj]);
+                    continue;
+                }
+
+                if ($cleanCompany !== '' && !empty($cnpj)) {
                     $rows[] = [
                         'Data' => $date,
                         'Valor' => str_replace(['R$', ' '], '', $value),
-                        'Razao Social' => $companyName,
+                        'Razao Social' => $cleanCompany,
                         'CNPJ' => $cnpj,
                     ];
                     \Log::info('Pattern 4 Row Added', ['row' => end($rows)]);
                     continue;
                 } else {
-                    \Log::warning('Pattern 4 Rejected', ['company_empty' => empty($companyName), 'cnpj_empty' => empty($cnpj)]);
+                    \Log::warning('Pattern 4 Rejected', ['company_empty' => empty($cleanCompany), 'cnpj_empty' => empty($cnpj)]);
                 }
             }
 
@@ -137,6 +148,69 @@ class PdfParserService
                     'CNPJ' => $matches[2],
                 ];
                 continue;
+            }
+
+            // Pattern 5: Date + Value + NAME (No CNPJ on this line) - Look Around for CNPJ
+            // This is crucial for long "VENDA" descriptions where CNPJ wraps to next line.
+            if (preg_match('/(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]{4,})\s+(.*)/u', $line, $matches)) {
+                $date = $matches[1];
+                $value = trim($matches[2]);
+                $description = trim($matches[3]);
+
+                // Only proceed if it looks like a valid record (e.g. contains VENDA or high value)
+                if (preg_match('/\b(vendas?|servico|aluguel)\b/ui', $description) || (float) str_replace(['.', ','], ['', '.'], $value) > 100) {
+
+                    // Look around for Forbidden keywords (to avoid duplication if it's a transfer)
+                    $lookaroundText = '';
+                    for ($offset = -1; $offset <= 2; $offset++) {
+                        $idx = $i + $offset;
+                        if (isset($lines[$idx]))
+                            $lookaroundText .= ' ' . $lines[$idx];
+                    }
+
+                    if (preg_match('/\b(transf\b|transf\.|transferência|resgate|crédito|credito)\b/ui', $lookaroundText)) {
+                        \Log::info('Pattern 5 Skipping: Forbidden word found in surrounding lines', ['text' => $lookaroundText]);
+                        continue;
+                    }
+
+                    // Look around for CNPJ (5 lines back, 5 lines forward)
+                    $foundCnpj = '';
+                    $cnpjRegex = '/(\b\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2}\b)/';
+
+                    for ($offset = -5; $offset <= 5; $offset++) {
+                        $idx = $i + $offset;
+                        if (isset($lines[$idx])) {
+                            if (preg_match($cnpjRegex, $lines[$idx], $cp)) {
+                                $foundCnpj = $cp[1];
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!empty($foundCnpj)) {
+                        $cleanName = $description ?: 'VENDA/SERVICO';
+                        // Clean garbage codes (e.g. "3 46013 ")
+                        $cleanName = preg_replace('/^\d+\s+\d+\s+/', '', $cleanName);
+                        $cleanName = trim($cleanName);
+
+                        // If name is just the CNPJ or empty, skip it (likely a bank fee line)
+                        if (empty($cleanName) || str_contains($foundCnpj, $cleanName) || strlen($cleanName) < 3) {
+                            if (!preg_match('/\b(vendas?|servico)\b/ui', $cleanName)) {
+                                \Log::info('Pattern 5 Skipping: Name looks like noise or CNPJ only', ['name' => $cleanName]);
+                                continue;
+                            }
+                        }
+
+                        $rows[] = [
+                            'Data' => $date,
+                            'Valor' => str_replace(['R$', ' '], '', $value),
+                            'Razao Social' => $cleanName,
+                            'CNPJ' => $foundCnpj,
+                        ];
+                        \Log::info('Pattern 5 (Lookaround) Row Added', ['row' => end($rows), 'offset' => $offset ?? 0]);
+                        continue;
+                    }
+                }
             }
 
             // Check Pattern 3 (Multi-line: Name \s+ ValueR$)

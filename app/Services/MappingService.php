@@ -162,29 +162,37 @@ class MappingService
             return false;
         }
 
-        // ALWAYS INCLUDE Venda/Vendas
-        if (str_contains($name, 'VENDA') || str_contains($name, 'VENDAS')) {
+        // ALWAYS INCLUDE Venda/Vendas/Aluguel/Alugueis
+        // But EXCLUDE if it's a subtotal line (starts with TOTAL or contains specific total terms)
+        $isTotalRent = str_contains($name, 'TOTAL ALUGUEL') || str_contains($name, 'TOTAL DE ALUGUEL') || str_contains($name, 'TOTAIS DE ALUGUEIS');
+
+        if (($isSalesOrRental = (str_contains($name, 'VENDA') || str_contains($name, 'VENDAS') || str_contains($name, 'ALUGUEL') || str_contains($name, 'ALUGUEIS'))) && !$isTotalRent) {
             return true;
         }
 
         // Skip Totals / Titles / Summary words
-        if (str_contains($name, 'TOTAL') || str_contains($name, 'ALUGUEIS') || str_contains($name, 'RESIDENCIAIS')) {
-            \Log::info("MappingService: Valid - Skipping Total/Title Row (No 'VENDA' present)", ['name' => $name]);
+        if (str_contains($name, 'TOTAL ALUGUEL') || str_contains($name, 'TOTAL DE ALUGUEL') || str_contains($name, 'TOTAIS DE ALUGUEIS') || str_contains($name, 'TOTAL') || str_contains($name, 'RESIDENCIAIS') || str_contains($name, 'SALDO')) {
+            \Log::info("MappingService: Valid - Skipping Row (Stop-word found and no 'VENDA/ALUGUEL')", ['name' => $name]);
             return false;
         }
 
-        // Skip Empty Name AND Empty CNPJ
-        if (empty($name) && empty($cnpj)) {
-            // Only log if valor is significant, otherwise it's just a blank row
-            if ($valor > 0) {
-                \Log::info("MappingService: Valid - Skipping Row (Value > 0 but No Name/CNPJ)", ['valor' => $valor, 'raw_name' => $rps->tomador->razaoSocial, 'raw_cnpj' => $rps->tomador->cpfCnpj]);
-            }
+        // Skip if Name is empty or just whitespace
+        $cleanName = trim($name);
+        if ($cleanName === '') {
+            \Log::info("MappingService: Valid - Skipping Row with Empty Name", ['valor' => $valor, 'cnpj' => $cnpj]);
             return false;
         }
 
-        // Skip Zero Value AND Empty CNPJ (likely a spacer row)
-        if ($valor == 0 && empty($cnpj)) {
-            // Common case for spacer rows
+        // Skip Insignificant Cent-level Values (Noise)
+        if ($valor < 2.00 && !str_contains($name, 'VENDA')) {
+            \Log::info("MappingService: Valid - Skipping Cent-level Noise", ['valor' => $valor, 'name' => $name]);
+            return false;
+        }
+
+        // Hard Block: Receita Federal / Bank Tax CNPJs that aren't sales
+        // 12453169000186 is Receita Federal, often shows up for IOF/Fees.
+        if ($cnpj === '12453169000186' && !str_contains($name, 'VENDA')) {
+            \Log::info("MappingService: Valid - Skipping Receita Federal Tax/Fee row", ['valor' => $valor, 'name' => $name]);
             return false;
         }
 
@@ -214,24 +222,72 @@ class MappingService
         // This catches keywords like TRANSF, CREDITO, RESGATE even if they aren't in the name field.
         $rowString = mb_strtoupper(implode(' ', array_filter(array_values($row))));
 
-        $isVenda = str_contains($rowString, 'VENDA') || str_contains($rowString, 'VENDAS');
+        // PRIORITY: Forbidden keywords (TRANSF/CREDITO/RESGATE) always trigger exclusion
+        // UNLESS the row also contains VENDA or ALUGUEL (Sales/Rentals are our primary target data)
+        // AND IS NOT a subtotal line (TOTAL ALUGUEL, etc.)
+        $isTotalRentRow = str_contains($rowString, 'TOTAL ALUGUEL') ||
+            str_contains($rowString, 'TOTAL DE ALUGUEL') ||
+            str_contains($rowString, 'TOTAIS DE ALUGUEIS');
 
-        if (!$isVenda) {
-            $isForbidden = str_contains($rowString, 'TRANSF') ||
-                str_contains($rowString, 'TRANSFERÊNCIA') ||
-                str_contains($rowString, 'TRANSFERENCIA') ||
-                str_contains($rowString, 'CRÉDITO') ||
-                str_contains($rowString, 'CREDITO') ||
-                str_contains($rowString, 'RESGATE');
+        $isSalesOrRental = (str_contains($rowString, 'VENDA') ||
+            str_contains($rowString, 'VENDAS') ||
+            str_contains($rowString, 'ALUGUEL') ||
+            str_contains($rowString, 'ALUGUEIS')) && !$isTotalRentRow;
 
-            if ($isForbidden) {
-                \Log::info("MappingService: Skipping row due to forbidden keyword found in content", [
-                    'name' => $getValue('Razao Social'),
-                    'matched_keywords' => true
-                ]);
-                return null;
+        $forbiddenKeywords = [
+            'TRANSF',
+            'TRANSFERÊNCIA',
+            'TRANSFERENCIA',
+            'CRÉDITO',
+            'CREDITO',
+            'RESGATE',
+            'RENDIMENTO',
+            'APLICAÇÃO',
+            'IOF',
+            'IRRF',
+            'TARIFA',
+            'TAXA',
+            'IMPOSTO',
+            'JUROS',
+            'DEBITO',
+            'PAGTO',
+            'PAGAMENTO',
+            'RENTAB',
+            'DIVIDENDO',
+            'TOTAL ALUGUEL',
+            'TOTAL DE ALUGUEL',
+            'TOTAIS DE ALUGUEIS',
+            'DEVOLUCAO',
+            'DEVOLUÇÃO',
+            'DEVOLUÇÕES',
+            'DEVOLUCOES',
+            'DEVOLVIDA',
+            'DEVOLVIDAS',
+            'CAUCAO',
+            'CAUÇÃO',
+            'CAUCOES',
+            'CAUÇÕES'
+        ];
+
+        $matchedForbidden = null;
+        foreach ($forbiddenKeywords as $fk) {
+            if (str_contains($rowString, $fk)) {
+                $matchedForbidden = $fk;
+                break;
             }
         }
+
+        if ($matchedForbidden && !$isSalesOrRental) {
+            \Log::info("MappingService: Skipping row due to forbidden keyword found in content", [
+                'name' => $getValue('Razao Social'),
+                'matched_keyword' => $matchedForbidden,
+                'row_summary' => mb_substr($rowString, 0, 100)
+            ]);
+            return null;
+        }
+
+        // SECOND PRIORITY: Venda/Vendas ensures the row stays even if it has noise (like 'TOTAL')
+        $isVenda = str_contains($rowString, 'VENDA') || str_contains($rowString, 'VENDAS');
 
         // Helper to sanitize CNPJ/CPF - remove all non-numeric characters
         $sanitizeCpfCnpj = function ($value) {
@@ -316,7 +372,29 @@ class MappingService
             $razaoSocial = trim($razaoSocial);
         }
 
+        // FALLBACK for 'Venda' lines that might have empty mapped Razao Social
+        if (empty($razaoSocial) && $isVenda) {
+            // Use a clean version of the row content as name
+            $razaoSocial = trim(mb_substr($rowString, 0, 150));
+        }
+
+        // Clean garbage from the start of Razao Social (like "3 46013 " or "9 46017 ")
+        if ($razaoSocial) {
+            $razaoSocial = preg_replace('/^\d+\s+\d+\s+/', '', $razaoSocial);
+            $razaoSocial = trim($razaoSocial);
+        }
+
         $cnpj = $sanitizeCpfCnpj($getValue('CNPJ'));
+
+        // EXTRACT CNPJ from content if missing from dedicated column
+        if (empty($cnpj)) {
+            if (preg_match('/(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})/', $rowString, $matches)) {
+                $cnpj = $sanitizeCpfCnpj($matches[1]);
+                if ($cnpj) {
+                    \Log::info('MappingService: CNPJ extracted from row content', ['extracted' => $cnpj]);
+                }
+            }
+        }
 
         // Skip rows with zero or negative values (not valid transactions)
         if ($valor <= 0) {
@@ -379,12 +457,12 @@ class MappingService
             codigoMunicipio: '2927408', // Salvador/BA
         );
 
-        // Generate sequential RPS number based on row index (Fallback)
-        static $rpsCounter = 1;
-        $numeroFinal = $getValue('NumeroRPS') ?: (string) $rpsCounter++;
+        // DO NOT generate sequential RPS number here if not found.
+        // Let the Generator handle it based on starting_number.
+        $numeroFinal = $getValue('NumeroRPS');
 
         return new RpsData(
-            numero: (string) $numeroFinal,
+            numero: $numeroFinal,
             serie: '1',
             tipo: '1', // RPS
             dataEmissao: $dataEmissao,

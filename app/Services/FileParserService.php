@@ -80,8 +80,8 @@ class FileParserService
             $highestScore = 0;
             $keywords = ['data', 'valor', 'cliente', 'cnpj', 'cpf', 'discriminacao', 'nota', 'serie', 'servico', 'total', 'bruto', 'liquido'];
 
-            // Scan first 20 rows to find the best header candidate
-            foreach ($worksheet->getRowIterator(1, 20) as $row) {
+            // Scan first 100 rows to find the best header candidate
+            foreach ($worksheet->getRowIterator(1, 100) as $row) {
                 $score = 0;
                 $cellIterator = $row->getCellIterator();
                 $cellIterator->setIterateOnlyExistingCells(true);
@@ -125,7 +125,9 @@ class FileParserService
                 }
 
                 if ($isHeaderRow) {
-                    $headers = $cells;
+                    $headers = array_map(function ($h) {
+                        return is_string($h) ? trim($h) : $h;
+                    }, $cells);
                     $isHeaderRow = false;
                     continue;
                 }

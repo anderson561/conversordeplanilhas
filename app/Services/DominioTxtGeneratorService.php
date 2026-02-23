@@ -55,7 +55,8 @@ class DominioTxtGeneratorService implements OutputGeneratorInterface
             $col05 = $this->sanitize($endereco, 150);
 
             // 6. Número Documento
-            $col06 = (string) ($rps->numero ?: $currentNumber++);
+            // PRIORITY: Use sequential numbering as requested by the user ("Tem que ler o campo Número Inicial")
+            $col06 = (string) $currentNumber++;
 
             // 7. Série
             $col07 = $rps->serie;
@@ -195,8 +196,10 @@ class DominioTxtGeneratorService implements OutputGeneratorInterface
         return $time ? date('d/m/Y', $time) : '';
     }
 
-    private function formatCnpjCpf(string $val): string
+    private function formatCnpjCpf(?string $val): string
     {
+        if (!$val)
+            return '';
         return preg_replace('/\D/', '', $val);
     }
 
