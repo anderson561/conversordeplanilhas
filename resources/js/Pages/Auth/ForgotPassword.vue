@@ -23,7 +23,10 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Esqueceu a Senha" />
+        <Head>
+            <title>Recuperar Senha | XMLConverter</title>
+            <meta name="description" content="Esqueceu sua senha? Solicite a redefinição de acesso ao Conversor de Planilhas XML." />
+        </Head>
 
         <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
             Esqueceu sua senha? Sem problemas. Apenas informe seu endereço de e-mail e nós enviaremos um link de redefinição de senha que permitirá que você escolha uma nova.

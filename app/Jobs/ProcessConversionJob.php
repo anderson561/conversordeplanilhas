@@ -25,7 +25,6 @@ class ProcessConversionJob implements ShouldQueue
      * Execute the job.
      */
     public function handle(
-        \App\Services\FileParserService $fileParser,
         \App\Services\MappingService $mapper,
         \App\Services\ConversionService $converter
     ): void {
@@ -39,17 +38,24 @@ class ProcessConversionJob implements ShouldQueue
             $this->upload->update(['status' => 'processing']);
 
             $fullPath = \Illuminate\Support\Facades\Storage::path($this->upload->file_path);
+            if (!file_exists($fullPath)) {
+                throw new \Exception("File not found at path: {$fullPath}");
+            }
 
             // Extract headers if missing
             $headers = $this->upload->meta_data['headers'] ?? null;
             if (!$headers) {
-                $headers = $fileParser->getHeaders($fullPath, $this->upload->mime_type);
+                \Log::info("Extracting headers for Upload: {$this->upload->id}");
+                $parser = \App\Factories\ParserFactory::make($fullPath);
+                $rows = $parser->parse($fullPath);
+                $headers = !empty($rows) ? array_keys($rows[0]) : [];
                 $this->upload->update([
                     'meta_data' => array_merge($this->upload->meta_data ?? [], ['headers' => $headers])
                 ]);
             }
 
             // Process conversion
+            \Log::info("Processing conversion logic for Upload: {$this->upload->id}");
             $converter->process($this->conversionJob, $mapper->getStandardMapping($headers));
 
             $this->upload->update(['status' => 'completed']);
@@ -57,8 +63,12 @@ class ProcessConversionJob implements ShouldQueue
             \Log::info("Conversion Job Completed Successfully for Upload: {$this->upload->id}");
 
             // Notify User
-            \Illuminate\Support\Facades\Mail::to($this->upload->user->email)
-                ->send(new \App\Mail\ConversionCompletedMail($this->conversionJob));
+            try {
+                \Illuminate\Support\Facades\Mail::to($this->upload->user->email)
+                    ->send(new \App\Mail\ConversionCompletedMail($this->conversionJob));
+            } catch (\Throwable $mailError) {
+                \Log::warning("Could not send email for Upload: {$this->upload->id}: " . $mailError->getMessage());
+            }
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Background Conversion Failed for Upload ' . $this->upload->id . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());

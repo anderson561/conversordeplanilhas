@@ -28,8 +28,7 @@ class PdfParserService
         $pattern2 = '/(.+?)\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})\s+([\d\.,]+(?:R\$)?)\s+(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))/u';
 
         // Pattern 4: Bank Statement Format (BANK DATE VALUE NAME ... CNPJ)
-        // BANCO BRASIL 04/11/2025 31.317,98IG PROJETO, CONSULTORIA E ENTRETENIMENTO LTDA ALUGUEL IMOVEL 40.690.212/001-90
-        // Note: Value and Name may be concatenated without space
+        // Note: Use non-greedy match and limited lookahead to avoid catastrophic backtracking
         $pattern4 = '/(?:BANCO\s+\w+|[\w\s\.-]+?)\s+(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+)\s*(.+?)\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})/ui';
 
         $count = count($lines);
@@ -39,6 +38,10 @@ class PdfParserService
             $line = trim($lines[$i]);
             if (empty($line))
                 continue;
+
+            if ($i % 50 === 0) {
+                \Log::debug("PdfParserService: Processing line $i of $count");
+            }
 
             // Keyword Filtering: Income/Transfer/Bank Fees/Taxes should be ignored
             // Adding more stop-words to eliminate "indevidas" lines (taxes/fees/outflows)

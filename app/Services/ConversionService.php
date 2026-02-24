@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Storage;
 class ConversionService
 {
     public function __construct(
-        protected FileParserService $fileParser,
         protected MappingService $mapper,
         protected \App\Factories\GeneratorFactory $factory
     ) {
@@ -18,8 +17,9 @@ class ConversionService
     {
         $fullPath = Storage::path($job->upload->file_path);
 
-        // 1. Parse
-        $rows = $this->fileParser->getRows($fullPath, null, $job->upload->mime_type);
+        // 1. Parse using Factory
+        $parser = \App\Factories\ParserFactory::make($fullPath);
+        $rows = collect($parser->parse($fullPath));
 
         // 2. Map
         $headers = array_keys($rows->first() ?? []);

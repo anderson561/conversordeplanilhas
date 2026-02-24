@@ -76,6 +76,9 @@ const submit = () => {
                 form.reset();
                 pendingFile.value = null;
                 
+                // RESTART POLLING on success to track the new job
+                startPolling();
+
                 if (page.props.flash?.download_url) {
                     window.location.href = page.props.flash.download_url;
                 }
@@ -111,30 +114,64 @@ const deleteUpload = (id) => {
 };
 
 // Polling logic for real-time status updates
-let pollingInterval = null;
+let pollingTimeout = null;
+const isPolling = ref(false);
 
 const lastUpdated = ref(new Date().toLocaleTimeString());
 
+const checkStatus = () => {
+    // Check if there are any pending or processing uploads
+    const hasActiveJobs = props.uploads.some(u => 
+        u.status === 'pending' || u.status === 'processing'
+    );
+
+    if (!hasActiveJobs && isPolling.value) {
+        console.log('Stopping polling: No active jobs');
+        stopPolling();
+        return;
+    }
+
+    if (!isPolling.value) return;
+
+    router.reload({ 
+        only: ['uploads'],
+        preserveScroll: true,
+        onSuccess: () => {
+            lastUpdated.value = new Date().toLocaleTimeString();
+            console.log('Polling status updated at ' + lastUpdated.value);
+            // Schedule next check
+            pollingTimeout = setTimeout(checkStatus, 3000);
+        },
+        onError: () => {
+            // Even on error, try again later if still polling (maybe server busy)
+            pollingTimeout = setTimeout(checkStatus, 10000);
+        }
+    });
+};
+
 const startPolling = () => {
-    pollingInterval = setInterval(() => {
-        router.reload({ 
-            preserveScroll: true,
-            onSuccess: () => {
-                lastUpdated.value = new Date().toLocaleTimeString();
-            }
-        });
-    }, 3000); // Check every 3 seconds unconditionally
+    if (isPolling.value) return;
+    console.log('Starting status polling...');
+    isPolling.value = true;
+    checkStatus();
 };
 
 const stopPolling = () => {
-    if (pollingInterval) {
-        clearInterval(pollingInterval);
-        pollingInterval = null;
+    isPolling.value = false;
+    if (pollingTimeout) {
+        clearTimeout(pollingTimeout);
+        pollingTimeout = null;
     }
 };
 
 onMounted(() => {
-    startPolling();
+    // Initial check - if there are active jobs, start polling
+    const hasActiveJobs = props.uploads.some(u => 
+        u.status === 'pending' || u.status === 'processing'
+    );
+    if (hasActiveJobs) {
+        startPolling();
+    }
 });
 
 onUnmounted(() => {
@@ -143,7 +180,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Head title="Uploads" />
+    <Head title="Meus Uploads | Conversor de Planilhas" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -342,13 +379,28 @@ onUnmounted(() => {
                                 />
                                 <div v-if="form.errors.file" class="text-red-500 text-xs mt-1">{{ form.errors.file }}</div>
                             </div>
-                            <button 
-                                type="submit" 
-                                :disabled="form.processing" 
-                                class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                {{ form.processing ? 'Processando...' : 'Gerar Arquivo' }}
-                            </button>
+                            <div class="pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <button 
+                                    type="submit" 
+                                    :disabled="form.processing" 
+                                    class="w-full sm:w-auto px-8 py-3 bg-[#FF2D20] text-white font-bold rounded-xl shadow-lg hover:bg-[#E0261D] focus:ring-4 focus:ring-[#FF2D20]/30 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    aria-label="Gerar arquivo de importação"
+                                >
+                                    <template v-if="form.processing">
+                                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Processando...
+                                    </template>
+                                    <template v-else>
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Converter para XML
+                                    </template>
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -365,55 +417,70 @@ onUnmounted(() => {
                                 Última atualização: {{ lastUpdated }}
                             </div>
                         </div>
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead>
+                    <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                        <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-800/50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Arquivo</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Data</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Arquivo</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr v-for="upload in uploads" :key="upload.id">
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ upload.original_name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ new Date(upload.created_at).toLocaleString() }}</td>
+                            <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+                                <tr v-for="upload in uploads" :key="upload.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" v-if="upload.status === 'completed'">Concluído</span>
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" v-else-if="upload.status === 'processing'">Processando</span>
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" v-else-if="upload.status === 'pending'">Pendente</span>
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" v-else>Falha</span>
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ upload.original_name }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ new Date(upload.created_at).toLocaleString() }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div v-if="upload.latest_conversion_job?.status === 'completed'">
-                                            <a :href="route('conversions.download', upload.latest_conversion_job.id)" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none transition ease-in-out duration-150">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                                </svg>
-                                                Download XML
-                                            </a>
-                                        </div>
-                                        <div v-else-if="upload.status === 'failed' || upload.latest_conversion_job?.status === 'failed'" class="text-red-500 text-xs flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            Falha
-                                        </div>
-                                        <div v-else-if="upload.latest_conversion_job?.status === 'processing'" class="text-blue-500 text-xs">
-                                            Processando...
-                                        </div>
-                                        <span v-else class="text-gray-400 text-xs">-</span>
-                                        
-                                        <button 
-                                            @click="deleteUpload(upload.id)"
-                                            class="ml-3 text-red-600 hover:text-red-900 text-sm font-medium focus:outline-none"
+                                        <span 
+                                            :class="{
+                                                'px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1': true,
+                                                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400': upload.status === 'pending' || upload.status === 'processing',
+                                                'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': upload.status === 'completed',
+                                                'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': upload.status === 'failed'
+                                            }"
                                         >
-                                            Limpar
-                                        </button>
+                                            <span v-if="upload.status === 'processing'" class="animate-pulse w-2 h-2 bg-yellow-400 rounded-full"></span>
+                                            {{ upload.status === 'completed' ? 'CONCLUÍDO' : upload.status.toUpperCase() }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex items-center gap-3">
+                                            <div v-if="upload.latest_conversion_job?.status === 'completed'">
+                                                <a :href="route('conversions.download', upload.latest_conversion_job.id)" class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                    </svg>
+                                                    DOWNLOAD
+                                                </a>
+                                            </div>
+                                            <div v-else-if="upload.status === 'failed' || upload.latest_conversion_job?.status === 'failed'" class="text-red-500 flex items-center gap-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span class="text-xs font-bold">FALHA</span>
+                                            </div>
+                                            
+                                            <button 
+                                                @click="deleteUpload(upload.id)"
+                                                class="text-gray-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                                title="Excluir"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="uploads.length === 0">
-                                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">Nenhum arquivo enviado ainda.</td>
+                                    <td colspan="4" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400 italic">
+                                        Sua conta está limpa. Que tal começar sua primeira conversão agora?
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>

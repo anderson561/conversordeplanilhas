@@ -154,15 +154,17 @@ class UploadController extends Controller
         // If meta_data is empty, try to extract headers now
         if (empty($upload->meta_data) || !isset($upload->meta_data['headers'])) {
             try {
-                $fileParser = app(FileParserService::class);
                 $fullPath = Storage::path($upload->file_path);
-                $headers = $fileParser->getHeaders($fullPath);
+                $parser = \App\Factories\ParserFactory::make($fullPath);
+                $rows = $parser->parse($fullPath);
+
+                $headers = !empty($rows) ? array_keys($rows[0]) : [];
 
                 $upload->update([
                     'meta_data' => ['headers' => $headers]
                 ]);
             } catch (\Exception $e) {
-                \Log::error('Failed to extract headers: ' . $e->getMessage());
+                \Log::error('Failed to extract headers via Factory: ' . $e->getMessage());
                 return redirect()->route('uploads.index')
                     ->with('error', 'Erro ao processar arquivo: ' . $e->getMessage());
             }

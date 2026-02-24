@@ -12,7 +12,25 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Bem-vindo" />
+    <Head>
+        <title>Conversor de Planilhas para Domínio Sistemas & ABRASF</title>
+        <meta name="description" content="Converta planilhas Excel e PDF para o padrão ABRASF e Domínio Sistemas com agilidade e precisão. Automação contábil simplificada." />
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "XMLConverter",
+          "operatingSystem": "Web",
+          "applicationCategory": "BusinessApplication",
+          "description": "Transforme planilhas Excel e arquivos PDF em arquivos de importação contábil padrão ABRASF.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "BRL"
+          }
+        }
+        </script>
+    </Head>
     
     <div class="bg-gray-50 text-black/90 dark:bg-black dark:text-white/90 min-h-screen flex flex-col items-center justify-center selection:bg-[#FF2D20] selection:text-white">
         
@@ -59,8 +77,8 @@ defineProps({
             </div>
 
             <h1 class="text-4xl font-bold tracking-tight sm:text-6xl mb-6">
-                Conversão de Planilhas <br class="hidden sm:block" />
-                <span class="text-[#FF2D20]">Simples e Eficiente.</span>
+                Conversão Contábil de Planilhas <br class="hidden sm:block" />
+                <span class="text-[#FF2D20]">Rápida e Integrada.</span>
             </h1>
             
             <p class="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">

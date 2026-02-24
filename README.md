@@ -1,17 +1,16 @@
-# ABRASF XML Converter SaaS 🚀
+# XMLConverter: O Atalho para sua Automação Contábil 🚀
 
-Converta planilhas financeiras (Excel/PDF) em arquivos XML compatíveis com sistemas de contabilidade (Domínio Sistemas, ABRASF Salvador, e muito mais) de forma simples e segura.
+> **Transforme o caos de planilhas financeiras em arquivos XML impecáveis em segundos.**
 
-## ✨ Principais Funcionalidades
+O **XMLConverter** é uma plataforma SaaS desenhada para contadores e empresas que precisam de agilidade. Converta planilhas Excel e arquivos PDF (extratos, notas) em arquivos de importação padrão **Domínio Sistemas** e **ABRASF** com precisão cirúrgica e zero estresse.
 
-- **Mapeamento Inteligente**: Detecção automática de colunas críticas (Data, Valor, Razão Social, CNPJ).
-- **Suporte Multi-Formato**: Processamento nativo de arquivos `.xlsx`, `.xls`, `.csv` e `.pdf`.
-- **Extração Avançada de PDF**: Reconhecimento inteligente de extratos bancários (Padrão 4) e notas fiscais com formatação irregular (CNPJ com vírgulas, CPF com pontos extras). **Novo:** Filtro automático de linhas de crédito/transferência (receitas) para processar apenas despesas.
-- **Precisão Fiscal (Domínio/ABRASF)**: Geração de XML com `<Competencia>` no formato estrito (`AAAA-MM-DD`) para evitar erros de importação (o famoso "dia 01") e timestamps padronizados (`12:00:00 -03:00`) na emissão.
-- **Fila de Processamento (Scalability)**: Arquivos grandes são processados em segundo plano via Redis.
-- **Notificações em Tempo Real**: Interface com polling de 3s e alertas por e-mail.
-- **Arquitetura Escalável**: Utiliza os padrões **Strategy** e **Factory** para facilitar a adição de novos formatos de prefeituras ou sistemas contábeis.
-- **Backups Automáticos**: Rotina diária de backup do banco de dados e arquivos.
+## ✨ O que você ganha com o XMLConverter?
+
+- **Mapeamento sem Esforço**: Detecção automática inteligente de colunas essenciais (Data, Valor, CNPJ). Você não precisa configurar nada.
+- **DNA Contábil**: Extração avançada de PDFs complexos. Filtramos automaticamente ruídos (transferências/créditos) para focar apenas no que importa.
+- **Zero Erros de Importação**: Datas e timestamps formatados rigorosamente nos padrões estritos (`AAAA-MM-DD` e ISO-8601).
+- **Processamento em Escala**: Envie centenas de linhas de uma vez. Nosso sistema de fila processa tudo em segundo plano enquanto você foca no que importa.
+- **Histórico e Segurança**: Acesse suas conversões passadas e baixe os arquivos a qualquer momento em um ambiente seguro e isolado.
 
 ## 🛠️ Stack Tecnológica
 
