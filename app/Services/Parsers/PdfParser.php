@@ -19,10 +19,10 @@ class PdfParser implements FileParserInterface
         $lines = explode("\n", $text);
         $rows = [];
 
-        // Regex patterns (Copied from original PdfParserService)
-        $pattern1 = '/(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+(?:R\$)?)\s+(.+?)\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})/u';
-        $pattern2 = '/(.+?)\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})\s+([\d\.,]+(?:R\$)?)\s+(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))/u';
-        $pattern4 = '/(?:\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+)\s*(.+?)\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})/ui';
+        // Regex patterns (Updated to capture optional UND code before CNPJ)
+        $pattern1 = '/(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+(?:R\$)?)\s+(.+?)(?:\s+([A-Z]{2,4}\d{2,4}(?:E\d+)?))?\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})/u';
+        $pattern2 = '/(.+?)(?:\s+([A-Z]{2,4}\d{2,4}(?:E\d+)?))?\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})\s+([\d\.,]+(?:R\$)?)\s+(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))/u';
+        $pattern4 = '/(?:\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+)\s*(.+?)(?:\s+([A-Z]{2,4}\d{2,4}(?:E\d+)?))?\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})/ui';
 
         $count = count($lines);
         $lastSeenDate = null;
@@ -43,12 +43,13 @@ class PdfParser implements FileParserInterface
             }
 
             // Pattern 4 strategy
-            if (preg_match('/(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+)(.+?)(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})/u', $line, $matches)) {
+            if (preg_match('/(\d{2}[\/\.]\d{2}[\/\.](?:\d{4}|\d{2}))\s+([\d\.,]+)(.+?)(?:\s+([A-Z]{2,4}\d{2,4}(?:E\d+)?))?\s+(\d{2,3}[\.\/,\-]\d{3}[\.\/,\-]\d{3}[\.\/,\-][\d\.\/,\-]+\d{1,2})/u', $line, $matches)) {
                 $rows[] = [
                     'Data' => $matches[1],
                     'Valor' => str_replace(['R$', ' '], '', $matches[2]),
                     'Razao Social' => trim($matches[3]),
-                    'CNPJ' => $matches[4],
+                    'UND' => $matches[4] ?? null,
+                    'CNPJ' => $matches[5],
                 ];
                 continue;
             }
@@ -59,7 +60,8 @@ class PdfParser implements FileParserInterface
                     'Data' => $matches[1],
                     'Valor' => str_replace(['R$', ' '], '', $matches[2]),
                     'Razao Social' => trim($matches[3]),
-                    'CNPJ' => $matches[4],
+                    'UND' => $matches[4] ?? null,
+                    'CNPJ' => $matches[5],
                 ];
                 continue;
             }
@@ -67,10 +69,11 @@ class PdfParser implements FileParserInterface
             // Pattern 2
             if (preg_match($pattern2, $line, $matches)) {
                 $rows[] = [
-                    'Data' => $matches[4],
-                    'Valor' => str_replace(['R$', ' '], '', $matches[3]),
+                    'Data' => $matches[5],
+                    'Valor' => str_replace(['R$', ' '], '', $matches[4]),
                     'Razao Social' => trim($matches[1]),
-                    'CNPJ' => $matches[2],
+                    'UND' => $matches[2] ?? null,
+                    'CNPJ' => $matches[3],
                 ];
                 continue;
             }

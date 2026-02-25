@@ -10,6 +10,8 @@ use Illuminate\Support\Arr;
 
 class MappingService
 {
+    public const BLACKLISTED_COLUMNS = ['und', 'unidade'];
+
     public const STANDARD_MAPPING = [
         'Data' => 'Data',
         'Valor' => 'Valor',
@@ -102,6 +104,10 @@ class MappingService
     private function detectColumn(array $columns, array $keywords): ?string
     {
         $normalizedColumns = array_map(fn($c) => mb_strtolower(trim($c)), $columns);
+
+        // Remove blacklisted columns from candidates
+        $filteredColumns = array_filter($normalizedColumns, fn($c) => !in_array($c, self::BLACKLISTED_COLUMNS));
+
         // Create map of lowerCase -> Original
         $columnMap = array_combine($normalizedColumns, $columns);
 
@@ -112,7 +118,7 @@ class MappingService
             }
 
             // Second pass: Contains
-            foreach ($normalizedColumns as $col) {
+            foreach ($filteredColumns as $col) {
                 if (str_contains($col, $keyword)) {
                     return $columnMap[$col];
                 }
@@ -138,6 +144,13 @@ class MappingService
             // FILTER: Validate RPS before adding
             if ($this->isValidRps($rps)) {
                 $rpsList[] = $rps;
+            } else {
+                \Log::warning("MappingService: RPS discarded by validation", [
+                    'razao_social' => $rps->tomador->razaoSocial ?? 'N/A',
+                    'cnpj' => $rps->tomador->cpfCnpj ?? 'N/A',
+                    'valor' => $rps->servico->valorServico ?? 0,
+                    'file_row_hint' => mb_substr($rps->servico->discriminacao ?? 'N/A', 0, 50)
+                ]);
             }
         }
 
@@ -206,6 +219,7 @@ class MappingService
         if ($traceCount++ < 5) {
             \Log::info('MappingService: Row Trace', [
                 'row_keys' => array_keys($row),
+                'normalized_keys' => array_map(fn($k) => mb_strtolower(trim((string) $k)), array_keys($row)),
                 'mapping_rules' => $mappingRules
             ]);
         }
@@ -220,7 +234,13 @@ class MappingService
 
         // NEW: Absolute Keyword Filtering for the WHOLE ROW
         // This catches keywords like TRANSF, CREDITO, RESGATE even if they aren't in the name field.
-        $rowString = mb_strtoupper(implode(' ', array_filter(array_values($row))));
+        // We EXCLUDE blacklisted columns (UND) from the row string to avoid leaking unit codes into fallback names.
+        $filteredRowData = array_filter($row, function ($val, $key) {
+            $k = mb_strtolower(trim((string) $key));
+            return !in_array($k, self::BLACKLISTED_COLUMNS);
+        }, ARRAY_FILTER_USE_BOTH);
+
+        $rowString = mb_strtoupper(implode(' ', array_filter(array_values($filteredRowData))));
 
         // PRIORITY: Forbidden keywords (TRANSF/CREDITO/RESGATE) always trigger exclusion
         // UNLESS the row also contains VENDA or ALUGUEL (Sales/Rentals are our primary target data)
@@ -402,7 +422,8 @@ class MappingService
                 \Log::info('MappingService: Skipping row with zero/negative value', [
                     'valor' => $valor,
                     'name' => $razaoSocial,
-                    'cnpj' => $cnpj
+                    'cnpj' => $cnpj,
+                    'row' => mb_substr($rowString, 0, 100)
                 ]);
             }
             return null;
@@ -522,6 +543,15 @@ class MappingService
 
         // Fallback to strtotime
         $ts = strtotime(str_replace('/', '-', $dateStr));
-        return $ts ? date('Y-m-d', $ts) : null;
+        $date = $ts ? date('Y-m-d', $ts) : null;
+
+        // USER REQUEST: Auto-fix year 2025 to 2026
+        if ($date && str_starts_with($date, '2025-')) {
+            $oldDate = $date;
+            $date = '2026' . substr($oldDate, 4);
+            \Log::info("MappingService: Auto-fixing year 2025 to 2026", ['from' => $oldDate, 'to' => $date]);
+        }
+
+        return $date;
     }
 }

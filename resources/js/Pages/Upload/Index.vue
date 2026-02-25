@@ -488,6 +488,7 @@ onUnmounted(() => {
                 </div>
             </div>
         </div>
+    </div>
 
         <!-- Duplicate File Modal -->
         <div v-if="showDuplicateModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">

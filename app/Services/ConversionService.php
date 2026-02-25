@@ -62,6 +62,8 @@ class ConversionService
             'acumulador' => $job->upload->acumulador ?? '1',
         ];
 
+        \Log::info('ConversionService: Generation Options', $options);
+
         // 5. Generate using Factory & Strategy
         try {
             $generator = $this->factory->make($xmlType);

@@ -30,7 +30,7 @@ class ProcessConversionJob implements ShouldQueue
     ): void {
         // Increase memory limit for worker process
         ini_set('memory_limit', '1024M');
-        set_time_limit(600); // 10 minutes
+        set_time_limit(6); // 6 seconds
 
         try {
             \Log::info("Starting Conversion Job for Upload: {$this->upload->id}");
@@ -58,9 +58,14 @@ class ProcessConversionJob implements ShouldQueue
             \Log::info("Processing conversion logic for Upload: {$this->upload->id}");
             $converter->process($this->conversionJob, $mapper->getStandardMapping($headers));
 
-            $this->upload->update(['status' => 'completed']);
-            $this->conversionJob->update(['status' => 'completed', 'completed_at' => now()]);
-            \Log::info("Conversion Job Completed Successfully for Upload: {$this->upload->id}");
+            $this->upload->status = 'completed';
+            $this->upload->save();
+
+            $this->conversionJob->status = 'completed';
+            $this->conversionJob->completed_at = now();
+            $this->conversionJob->save();
+
+            \Log::info("Conversion Job Completed Successfully for Upload: {$this->upload->id}. Final status: {$this->upload->status}");
 
             // Notify User
             try {

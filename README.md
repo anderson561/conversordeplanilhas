@@ -66,8 +66,19 @@ O **XMLConverter** é uma plataforma SaaS desenhada para contadores e empresas q
 
 ## 📖 Documentação Adicional
 
+### 🛡️ Expert Persona Insights (Workflows)
+Desenvolvemos uma suite de documentação técnica baseada em 8 especialidades:
+- [**Auditoria de Segurança**](docs/experts/security_audit.md): Análise de riscos e proteção de dados.
+- [**Blueprint Arquitetural**](docs/experts/architectural_blueprint.md): Padrões de projeto e estrutura SOLID.
+- [**Suite de Testes (QA)**](docs/experts/test_suite.md): Estratégia de testes e cobertura.
+- [**Estratégia GitOps**](docs/experts/gitops_strategy.md): Padrões de commit e release.
+- [**Ciclo TDD**](docs/experts/tdd_cycle.md): Metodologia Test-Driven Development.
+- [**Auditoria SEO**](docs/experts/seo_audit.md): Performance e visibilidade orgânica.
+- [**Especificação Material UI/UX**](docs/experts/frontend_spec.md): Design System e usabilidade.
+- [**Content & Narrative Pack**](docs/experts/content_pack.md): Estratégia de comunicação e microcopy.
+
+### Outros Recursos
 - [**Guia de Implantação (Vapor/Forge)**](.gemini/antigravity/brain/af1a3ff3-b7f4-43e7-af20-37e2509ce46d/deployment.md)
-- [**Documentação Técnica**](DOCUMENTATION.md)
 - [**Dicas para Importação no Domínio**](.gemini/antigravity/brain/af1a3ff3-b7f4-43e7-af20-37e2509ce46d/dominio_import_sem_lancamento.md)
 
 ## 📄 Licença

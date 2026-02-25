@@ -10,7 +10,8 @@ class XmlGeneratorService implements OutputGeneratorInterface
 {
     public function generateBatch(array $rpsList, string $loteId = '1', array $providerInfo = [], array $options = []): string
     {
-        return $this->generateBatchXml($rpsList, $loteId, $providerInfo);
+        $startingNumber = $options['starting_number'] ?? 1;
+        return $this->generateBatchXml($rpsList, $loteId, $providerInfo, $startingNumber);
     }
 
     public function getExtension(): string
@@ -18,7 +19,7 @@ class XmlGeneratorService implements OutputGeneratorInterface
         return 'xml';
     }
 
-    public function generateBatchXml(array $rpsList, string $loteId = '1', array $providerInfo = []): string
+    public function generateBatchXml(array $rpsList, string $loteId = '1', array $providerInfo = [], int $startingNumber = 1): string
     {
         $dom = new DOMDocument('1.0', 'ISO-8859-1'); // Adjusted encoding to match user sample usually
         $dom->formatOutput = true;
@@ -41,8 +42,14 @@ class XmlGeneratorService implements OutputGeneratorInterface
         $listaNfse = $dom->createElement('ListaNfse');
         $root->appendChild($listaNfse);
 
+        $currentNumber = $startingNumber;
+
         foreach ($rpsList as $index => $rpsData) {
             /** @var RpsData $rpsData */
+
+            // Determine Number: RPS number OR Sequential Fallback
+            $numeroFinal = $rpsData->numero ?: (string) $currentNumber;
+            $currentNumber++;
 
             // WRAPPER: CompNfse (Matches XML B)
             $compNfse = $dom->createElement('CompNfse');
@@ -58,7 +65,7 @@ class XmlGeneratorService implements OutputGeneratorInterface
             $nfse->appendChild($infNfse);
 
             // 1. Numero (Required by Schema in InfNfse, mapped from RPS or generated)
-            $infNfse->appendChild($dom->createElement('Numero', $rpsData->numero));
+            $infNfse->appendChild($dom->createElement('Numero', $numeroFinal));
 
             // 2. CodigoVerificacao (Fake generator for valid XML structure)
             $codVerif = strtoupper(substr(md5($rpsData->numero . $rpsData->dataEmissao), 0, 8));
@@ -73,7 +80,7 @@ class XmlGeneratorService implements OutputGeneratorInterface
             // 4. IdentificacaoRps (Optional in InfNfse but good for tracking)
             $identificacaoRps = $dom->createElement('IdentificacaoRps');
             $infNfse->appendChild($identificacaoRps);
-            $identificacaoRps->appendChild($dom->createElement('Numero', $rpsData->numero));
+            $identificacaoRps->appendChild($dom->createElement('Numero', $numeroFinal));
             $identificacaoRps->appendChild($dom->createElement('Serie', $rpsData->serie));
             $identificacaoRps->appendChild($dom->createElement('Tipo', $rpsData->tipo));
             $identificacaoRps->appendChild($dom->createElement('mod', '44'));
